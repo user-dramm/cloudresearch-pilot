@@ -80,16 +80,16 @@ window.STUDY_CONFIG = {
       id: "P1", cc: "EMBR-CC-00051", enabled: false,
       versions: [
         { key: "k3ta", yts: ["", ""], srcs: ["", ""] },
-        { key: "k9vm", yts: ["", ""], srcs: ["", ""] }
+        { key: "k9vm", yts: ["", "rN57sPKZ7TY"], srcs: ["", ""] }
       ]
     },
     {
       id: "P2", cc: "EMBR-CC-00158", enabled: true,
       versions: [
-        { key: "k5qd", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+        { key: "k5qd", yts: ["", "SvFQ7bhfZ2s"],
                        srcs: ["https://clips.example.com/k5qd_m1.mp4",
                               "https://clips.example.com/k5qd_m3.mp4"] },
-        { key: "k2wj", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+        { key: "k2wj", yts: ["elN8cuwcDSE", "dlRP9lEVEgY"],
                        srcs: ["https://clips.example.com/k2wj_m1.mp4",
                               "https://clips.example.com/k2wj_m3.mp4"] }
       ]
@@ -97,10 +97,10 @@ window.STUDY_CONFIG = {
     {
       id: "P3", cc: "EMBR-CC-00162", enabled: true,
       versions: [
-        { key: "k8rn", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+        { key: "k8rn", yts: ["qHwWmi8mugA", "zDVyC079umo"],
                        srcs: ["https://clips.example.com/k8rn_m1.mp4",
                               "https://clips.example.com/k8rn_m3.mp4"] },
-        { key: "k4zf", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+        { key: "k4zf", yts: ["", ""],
                        srcs: ["https://clips.example.com/k4zf_m1.mp4",
                               "https://clips.example.com/k4zf_m3.mp4"] }
       ]
@@ -114,16 +114,16 @@ window.STUDY_CONFIG = {
       id: "P4", cc: "EMBR-CC-00176", enabled: false,
       versions: [
         { key: "k6hb", yts: ["", ""], srcs: ["", ""] },
-        { key: "k1ps", yts: ["", ""], srcs: ["", ""] }
+        { key: "k1ps", yts: ["GSbn6YHm6e8", ""], srcs: ["", ""] }
       ]
     },
     {
       id: "P5", cc: "EMBR-CC-00254", enabled: true,
       versions: [
-        { key: "k7cy", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+        { key: "k7cy", yts: ["Lr5SbW449UU", "3MyzUxYZVTE"],
                        srcs: ["https://clips.example.com/k7cy_m1.mp4",
                               "https://clips.example.com/k7cy_m3.mp4"] },
-        { key: "k0lg", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+        { key: "k0lg", yts: ["YeiqjBNu9rY", ""],
                        srcs: ["https://clips.example.com/k0lg_m1.mp4",
                               "https://clips.example.com/k0lg_m3.mp4"] }
       ]

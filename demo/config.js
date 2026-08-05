@@ -61,14 +61,27 @@ window.STUDY_CONFIG = {
     "what a paid rater will get. Your answers are tagged as a preview and are " +
     "excluded from the analysis automatically.",
 
-  /* Fill in the four throwaway YouTube IDs. Order matters inside each set:
-     the code word is burned into the SECOND video of a set. */
+  /* Real uploads, but NOT a real pair. Both sets below are the CURRENT build of
+     two DIFFERENT courses (00158 and 00162), because at the time this was wired up
+     no course had both of its sides uploaded. So the "which set was better"
+     question compares unrelated material and its answer is meaningless.
+
+     Everything else is the genuine article: real videos, real durations, real code
+     words burned in at 45% of each second video, the real watch gate, the real
+     question set and the real conditional follow-ups.
+
+     Code words a reviewer will actually see:
+       set 1 (k2wj, 00158 module 3) -> juniper
+       set 2 (k8rn, 00162 module 3) -> kettle
+
+     Order inside a set matters: module 1 first, then module 3, which is the one
+     carrying the code word. */
   pairs: [
     {
       id: "P2", cc: "DEMO", enabled: true,
       versions: [
-        { key: "k5qd", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"] },
-        { key: "k2wj", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"] }
+        { key: "k2wj", yts: ["elN8cuwcDSE", "dlRP9lEVEgY"] },
+        { key: "k8rn", yts: ["qHwWmi8mugA", "zDVyC079umo"] }
       ]
     }
   ]
