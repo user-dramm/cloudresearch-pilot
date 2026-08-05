@@ -16,10 +16,18 @@ Input layout, one folder per course, four files in each:
 "(old)" anywhere in the filename marks the archived side, with or without a space
 before the bracket. Anything without it is the current build.
 
-Output, named only by the OPAQUE KEY so nothing on disk or in a URL says old or new:
+Output, as module - padded course code - opaque key, with -cw where a code word was
+burned in:
 
-    out/k5qd_v1.mp4   out/k5qd_v2.mp4      <- one version's two videos
-    out/k2wj_v1.mp4   out/k2wj_v2.mp4      <- the other version's two
+    out/1-00158-k5qd.mp4   out/3-00158-k5qd-cw.mp4     <- one version's two videos
+    out/1-00158-k2wj.mp4   out/3-00158-k2wj-cw.mp4     <- the other version's two
+
+The key is in the name because both sides hold a module 3 of the same course, so
+course and module alone cannot tell them apart. Nothing in the name says old or new.
+
+THE YOUTUBE TITLE IS NOT THE FILENAME. A YouTube title is visible inside the embed,
+so it must carry nothing identifying at all - upload each file under its key and
+index (k5qd-1, k5qd-2), which the mapping records as youtube_title_1/2.
 
 WHAT THIS DOES AND WHY
 ----------------------
@@ -49,6 +57,15 @@ WORD_POOL = ["cobalt", "juniper", "sandbar", "kettle", "driftwood",
              "saffron", "lattice", "ironwood", "marlin", "plumline"]
 
 VIDEO_RE = re.compile(r"^\s*(\d+)\s*-\s*(.+?)\s*(\(old\))?\.mp4$", re.I)
+
+# Overlay geometry, in 1920x1080 coordinates. SHARED between the encoder and the
+# verifier on purpose: the verifier crops to where the box should be, and when these
+# were two separate hardcoded numbers, moving the overlay silently made the check
+# examine empty frame and report every file as a failure. Change it here only.
+OVERLAY_Y  = 300     # top edge of the box. Upper third: clear of the orange callout
+                     # panel across the middle-right and the captions along the bottom.
+OVERLAY_PT = 44      # font size
+OVERLAY_PAD = 16     # box border width
 
 
 def find_pairs(course_dir):
@@ -98,9 +115,9 @@ def encode(ffmpeg, src, dst, word=None, at=None, fontfile=None,
         # turns a proof-of-watching question into a guess. The avatar circle sits
         # top-RIGHT, so top-centre is clear on both sides of every pair.
         vf += (",drawtext=%stext='Code word\\: %s'"
-               ":fontcolor=white:fontsize=44:box=1:boxcolor=black@0.72:boxborderw=16"
-               ":x=(w-text_w)/2:y=52:enable='between(t,%.2f,%.2f)'"
-               % (font, safe, at, at + 5))
+               ":fontcolor=white:fontsize=%d:box=1:boxcolor=black@0.72:boxborderw=%d"
+               ":x=(w-text_w)/2:y=%d:enable='between(t,%.2f,%.2f)'"
+               % (font, safe, OVERLAY_PT, OVERLAY_PAD, OVERLAY_Y, at, at + 5))
     cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", src,
            "-vf", vf,
            "-c:v", "libx264", "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p",
@@ -128,10 +145,14 @@ def verify_codeword(ffmpeg, out_path, src_path, at):
         # -i ffmpeg seeks to the nearest keyframe, and since re-encoding moves the
         # keyframes, output and source landed on DIFFERENT frames - which made this
         # comparison meaningless and produced false failures.
-        # Region: top strip, centre 60%, where the box is drawn.
+        # Crop derived from OVERLAY_Y so it always looks where the box actually is.
+        # Half scale, so 1080 coordinates halve.
+        box_h = OVERLAY_PT + OVERLAY_PAD * 2
+        y = max(0, OVERLAY_Y // 2 - 6)
+        h = box_h // 2 + 16
         p = subprocess.run([ffmpeg, "-hide_banner", "-loglevel", "error",
                             "-i", path, "-ss", "%.2f" % t, "-frames:v", "1",
-                            "-vf", "scale=960:540,crop=576:80:192:14,format=gray",
+                            "-vf", "scale=960:540,crop=576:%d:192:%d,format=gray" % (h, y),
                             "-f", "rawvideo", "-"], capture_output=True)
         return p.stdout
 
@@ -253,24 +274,35 @@ def main():
             d3 = duration(a.ffmpeg, m3) or 0
             at = round(d3 * 0.45, 2)
 
+            # Output names are for the human sorting a folder: module number, padded
+            # course code, the opaque key, and -cw where a code word was burned in.
+            # The KEY has to be in there because both sides hold a module 3 of the
+            # same course, so course+module alone is ambiguous - and the key is what
+            # distinguishes them without the filename ever saying old or new.
+            code = c.zfill(5)
+            n1 = "1-%s-%s.mp4" % (code, key)
+            n2 = "3-%s-%s-cw.mp4" % (code, key)
+
             print("    %-6s key %-10s code word %-10s on video 2 at %.0fs of %.0fs"
                   % (side, key, word, at, d3))
-            print("           v1  %s" % os.path.basename(m1))
-            print("           v2  %s" % os.path.basename(m3))
+            print("           %-26s <- %s" % (n1, os.path.basename(m1)))
+            print("           %-26s <- %s" % (n2, os.path.basename(m3)))
 
             mapping[key] = {"version": side, "pair_folder": c, "codeword": word,
                             "video1": os.path.basename(m1),
                             "video2": os.path.basename(m3),
+                            "out_video1": n1, "out_video2": n2,
+                            "youtube_title_1": "%s-1" % key,
+                            "youtube_title_2": "%s-2" % key,
                             "codeword_at_sec": at}
             if a.dry_run:
                 continue
-            encode(a.ffmpeg, m1, os.path.join(out, "%s_v1.mp4" % key))
-            v2 = os.path.join(out, "%s_v2.mp4" % key)
+            encode(a.ffmpeg, m1, os.path.join(out, n1))
+            v2 = os.path.join(out, n2)
             encode(a.ffmpeg, m3, v2, word=word, at=at, fontfile=a.fontfile)
-            for suffix in ("v1", "v2"):
-                p = os.path.join(out, "%s_%s.mp4" % (key, suffix))
-                print("           -> %s  %.0f MB" % (os.path.basename(p),
-                                                     os.path.getsize(p) / 1e6))
+            for n in (n1, n2):
+                p = os.path.join(out, n)
+                print("           -> %-26s %.0f MB" % (n, os.path.getsize(p) / 1e6))
             changed, total = verify_codeword(a.ffmpeg, v2, m3, at)
             if changed is None:
                 print("           code word check: could not compare frames")
