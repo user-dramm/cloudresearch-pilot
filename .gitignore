@@ -1,0 +1,41 @@
+# ============================================================================
+#  This repo is served to the public. Treat everything NOT listed here as
+#  published the moment it is committed.
+# ============================================================================
+
+# The entire blind. This one file is the difference between a blind study and
+# a broken one. Never commit it. decode_key.example.json (the template) IS
+# tracked, so take care which of the two you are editing.
+decode_key.json
+
+# Participant data. IDs are pseudonymous but still subject data, and a public
+# repo is the wrong place for them.
+*.csv
+*.tsv
+responses*
+
+# Video. Binaries in git history are permanent and GitHub Pages has a ~1 GB
+# soft cap, so clips are hosted elsewhere and never versioned here.
+clips/
+*.mp4
+*.mov
+*.webm
+*.mkv
+
+# The static ffmpeg binary, if it gets fetched into the project folder.
+bin/
+
+# Credentials of any kind. The one URL that must be public is the Apps Script
+# endpoint, which lives in config.js by construction.
+.env
+.env.*
+*.pem
+*.key
+
+# Local noise
+.DS_Store
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+*.part

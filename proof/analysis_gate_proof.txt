@@ -1,0 +1,129 @@
+PROOF THAT THE ANALYSIS GATE IS NOT RIGGED
+Generated 2026-08-05T17:02:11Z   form_version 1.2.0
+
+One script, two runs: synthetic data with a real effect, and synthetic data
+with none. A gate that prints VALIDATED means nothing until you have watched
+it print NOT VALIDATED on data where nothing is there.
+
+Decode key used here is decode_key.example.json copied verbatim - a placeholder
+mapping for testing. The real old/new call has not been made yet.
+
+########################################################################
+# RUN 1   --true-pref 0.80        expected: VALIDATED
+########################################################################
+wrote 35 synthetic rows to /tmp/win.csv (true preference for new = 0.80)
+==========================================================================
+EMBRACE CLOUDRESEARCH PILOT - ANALYSIS
+==========================================================================
+rows in export      35
+passed quality gate 35
+excluded            0
+
+--------------------------------------------------------------------------
+CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
+--------------------------------------------------------------------------
+  P1    new  7 : 0  old   new ahead
+  P2    new  6 : 1  old   new ahead
+  P3    new  5 : 2  old   new ahead
+  P4    new  6 : 1  old   new ahead
+  P5    new  6 : 1  old   new ahead
+
+  pairs where new leads: 5 of 5
+
+--------------------------------------------------------------------------
+CLAUSE 2 - pooled preference (need >= 65%% AND exact binomial p < .05)
+--------------------------------------------------------------------------
+  new preferred in 30 of 35 paired votes = 85.7%
+  exact binomial vs 50%:  two-sided p = 0.0000   one-sided p = 0.0000
+  the locked criterion reads two-sided; at n=35 both clauses hold from 24 wins up
+
+--------------------------------------------------------------------------
+CLAUSE 3 - mean 'overall' score (need new - old >= 0.50)
+--------------------------------------------------------------------------
+  overall   old 2.83   new 4.03   delta +1.20
+  visuals   old 3.29   new 4.17   delta +0.89
+  audio     old 3.54   new 3.94   delta +0.40
+  pacing    old 2.89   new 4.06   delta +1.17
+  standby   old 3.11   new 4.14   delta +1.03
+
+  within-rater overall delta: mean +1.20  sd 1.11  n 35
+  within-rater is the number that matters - each rater is their own control
+
+--------------------------------------------------------------------------
+DIAGNOSTICS (context, not part of the criterion)
+--------------------------------------------------------------------------
+  position effect     first-shown video won 19 of 35 (54%) - near 50% means order is not driving the result
+  old reads-as-AI 22/35 (63%)   noticed errors 10/35 (29%)
+  new reads-as-AI 0/35 (0%)   noticed errors 5/35 (14%)
+  mean confidence in the head-to-head choice: 3.80 / 5
+  mean within-pair rater agreement: 86% (50% = coin flip, 100% = unanimous)
+
+==========================================================================
+PRE-REGISTERED CRITERION
+==========================================================================
+  [PASS]  new ahead in >= 4 of 5 pairs        (5 of 5)
+  [PASS]  pooled pref >= 65% and p < .05      (85.7%, p = 0.0000)
+  [PASS]  overall delta >= +0.50              (+1.20)
+--------------------------------------------------------------------------
+  VERDICT: VALIDATED - all three clauses must hold
+==========================================================================
+
+########################################################################
+# RUN 2   --true-pref 0.50 --seed 3   expected: NOT VALIDATED
+########################################################################
+wrote 35 synthetic rows to /tmp/null.csv (true preference for new = 0.50)
+==========================================================================
+EMBRACE CLOUDRESEARCH PILOT - ANALYSIS
+==========================================================================
+rows in export      35
+passed quality gate 35
+excluded            0
+
+--------------------------------------------------------------------------
+CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
+--------------------------------------------------------------------------
+  P1    new  4 : 3  old   new ahead
+  P2    new  6 : 1  old   new ahead
+  P3    new  3 : 4  old   OLD ahead
+  P4    new  4 : 3  old   new ahead
+  P5    new  3 : 4  old   OLD ahead
+
+  pairs where new leads: 3 of 5
+
+--------------------------------------------------------------------------
+CLAUSE 2 - pooled preference (need >= 65%% AND exact binomial p < .05)
+--------------------------------------------------------------------------
+  new preferred in 20 of 35 paired votes = 57.1%
+  exact binomial vs 50%:  two-sided p = 0.4996   one-sided p = 0.2498
+  the locked criterion reads two-sided; at n=35 both clauses hold from 24 wins up
+
+--------------------------------------------------------------------------
+CLAUSE 3 - mean 'overall' score (need new - old >= 0.50)
+--------------------------------------------------------------------------
+  overall   old 2.97   new 3.29   delta +0.31
+  visuals   old 3.34   new 3.03   delta -0.31
+  audio     old 3.46   new 3.40   delta -0.06
+  pacing    old 3.03   new 3.03   delta +0.00
+  standby   old 3.00   new 3.11   delta +0.11
+
+  within-rater overall delta: mean +0.31  sd 0.87  n 35
+  within-rater is the number that matters - each rater is their own control
+
+--------------------------------------------------------------------------
+DIAGNOSTICS (context, not part of the criterion)
+--------------------------------------------------------------------------
+  position effect     first-shown video won 19 of 35 (54%) - near 50% means order is not driving the result
+  old reads-as-AI 25/35 (71%)   noticed errors 10/35 (29%)
+  new reads-as-AI 0/35 (0%)   noticed errors 7/35 (20%)
+  mean confidence in the head-to-head choice: 3.91 / 5
+  mean within-pair rater agreement: 63% (50% = coin flip, 100% = unanimous)
+
+==========================================================================
+PRE-REGISTERED CRITERION
+==========================================================================
+  [FAIL]  new ahead in >= 4 of 5 pairs        (3 of 5)
+  [FAIL]  pooled pref >= 65% and p < .05      (57.1%, p = 0.4996)
+  [FAIL]  overall delta >= +0.50              (+0.31)
+--------------------------------------------------------------------------
+  VERDICT: NOT VALIDATED - all three clauses must hold
+==========================================================================

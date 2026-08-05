@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Training video feedback</title>
+<style>
+  :root{
+    --paper:#f6f7f9; --card:#ffffff; --ink:#15181c; --body:#464c56;
+    --muted:#7c828d; --rule:#e2e5e9; --rule-soft:#eef0f3;
+    --accent:#2d4f6b; --accent-soft:#eaf0f5;
+    --ok:#2b6a4d; --ok-soft:#e9f2ed; --warn:#8a5a1c; --warn-soft:#fbf2e3;
+    --r:6px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--body);
+    font:400 16px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:28px 20px 96px}
+
+  /* ---- step rail ---- */
+  .rail{display:flex;gap:2px;margin-bottom:28px}
+  .rail div{
+    flex:1;height:3px;background:var(--rule);border-radius:2px;position:relative;
+  }
+  .rail div.done{background:var(--accent)}
+  .rail div.now{background:var(--accent);opacity:.45}
+  .eyebrow{
+    font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--muted);font-weight:600;margin:0 0 6px
+  }
+  h1{font-size:25px;line-height:1.25;color:var(--ink);font-weight:650;margin:0 0 14px;letter-spacing:-.01em}
+  h2{font-size:19px;line-height:1.3;color:var(--ink);font-weight:650;margin:0 0 10px;letter-spacing:-.005em}
+  p{margin:0 0 14px}
+  .lede{font-size:17px;color:var(--body)}
+  ul{margin:0 0 16px;padding-left:20px}
+  li{margin-bottom:7px}
+  .card{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);padding:26px 28px;margin-bottom:18px}
+  .note{background:var(--accent-soft);border:1px solid #d5e2ec;border-radius:var(--r);padding:14px 16px;font-size:15px;margin:0 0 18px}
+  .small{font-size:14px;color:var(--muted)}
+
+  /* ---- player ---- */
+  .frame{position:relative;width:100%;aspect-ratio:16/9;background:#0e1013;border-radius:var(--r);overflow:hidden}
+  .frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .gate{
+    display:flex;align-items:center;gap:14px;margin-top:12px;padding:12px 14px;
+    border:1px solid var(--rule);border-radius:var(--r);background:var(--card);font-size:14px
+  }
+  .gate.open{border-color:#c6ddd0;background:var(--ok-soft);color:var(--ok)}
+  .bar{flex:1;height:5px;background:var(--rule);border-radius:3px;overflow:hidden}
+  .bar span{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+  .gate.open .bar span{background:var(--ok)}
+  .pct{font-variant-numeric:tabular-nums;font-weight:600;min-width:42px;text-align:right}
+
+  /* ---- questions ---- */
+  .locked{opacity:.4;pointer-events:none;filter:saturate(.4)}
+  .q{padding:20px 0;border-top:1px solid var(--rule-soft)}
+  .q:first-child{border-top:0;padding-top:6px}
+  .q > label.qlabel{display:block;color:var(--ink);font-weight:550;margin-bottom:12px}
+  .req{color:#a4442f;font-weight:400}
+  .scale{display:flex;gap:8px;align-items:stretch}
+  .scale .end{display:flex;align-items:center;font-size:13px;color:var(--muted);max-width:96px;line-height:1.3}
+  .scale .opts{display:flex;gap:6px;flex:1}
+  .scale .opts label{
+    flex:1;text-align:center;padding:11px 0;border:1px solid var(--rule);border-radius:var(--r);
+    cursor:pointer;font-variant-numeric:tabular-nums;font-weight:600;color:var(--body);
+    background:var(--card);transition:.12s
+  }
+  .scale .opts label:hover{border-color:var(--accent);color:var(--accent)}
+  .choice label{
+    display:block;padding:11px 14px;border:1px solid var(--rule);border-radius:var(--r);
+    margin-bottom:7px;cursor:pointer;background:var(--card);transition:.12s
+  }
+  .choice label:hover{border-color:var(--accent)}
+  input[type=radio]{position:absolute;opacity:0;width:0;height:0}
+  input[type=radio]:checked + span,
+  label.sel{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent)!important}
+  label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+  textarea,input[type=text]{
+    width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--card);
+    border:1px solid var(--rule);border-radius:var(--r);padding:11px 13px;resize:vertical
+  }
+  textarea{min-height:104px}
+  textarea:focus,input[type=text]:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+  .counter{font-size:13px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+  .counter.ok{color:var(--ok)}
+
+  button{
+    font:inherit;font-weight:600;font-size:16px;color:#fff;background:var(--accent);
+    border:0;border-radius:var(--r);padding:13px 26px;cursor:pointer;transition:.12s
+  }
+  button:hover{background:#24405a}
+  button:disabled{background:#b9bfc7;cursor:not-allowed}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--rule);padding:9px 16px;font-size:14px}
+  .err{color:#a4442f;font-size:14px;margin-top:12px;display:none}
+  .err.show{display:block}
+
+  .code{
+    font:600 26px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    letter-spacing:.14em;color:var(--ink);background:var(--ok-soft);
+    border:1px solid #c6ddd0;border-radius:var(--r);padding:20px;text-align:center;margin:6px 0 18px
+  }
+  .hidden{display:none!important}
+  .mobile-block{display:none}
+  @media (max-width:640px){
+    .desktop-only{display:none!important}
+    .mobile-block{display:block}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ================= mobile block ================= -->
+  <div class="mobile-block">
+    <div class="card">
+      <h1>This task needs a desktop or laptop</h1>
+      <p>The videos and the feedback questions don't work on a phone or tablet. Please return the task and pick it back up on a computer with sound.</p>
+    </div>
+  </div>
+
+  <div class="desktop-only">
+    <div class="rail" id="rail"></div>
+
+    <!-- ================= 0. intro ================= -->
+    <section id="s-intro" class="screen">
+      <div class="card">
+        <p class="eyebrow">Before you start</p>
+        <h1>Watch two short training videos and tell us what you think</h1>
+        <p class="lede">You'll watch two videos back to back, answer a few questions about each, then say which one you thought was better and why.</p>
+
+        <h2>What to expect</h2>
+        <ul>
+          <li>Two videos, about 10 minutes each. Plan for roughly 25 minutes in total.</li>
+          <li>The questions unlock once a video has actually played through, so please watch rather than skip ahead. Fast-forwarding doesn't count toward the unlock.</li>
+          <li>Partway through each video a short <strong>code word</strong> appears on screen. We ask for it afterward, so keep an eye out.</li>
+          <li>Your written comments matter most. A couple of sentences in your own words about what worked or didn't is exactly what we're after.</li>
+        </ul>
+
+        <div class="note">
+          Answer honestly — there are no right or wrong opinions, and any view is accepted.
+          Rushed or copy-pasted answers may be rejected. At the end you'll get a completion
+          code to paste back into CloudResearch Connect.
+        </div>
+
+        <p class="small" id="pid-line"></p>
+        <button id="btn-start">Start</button>
+        <div class="err" id="err-intro"></div>
+      </div>
+    </section>
+
+    <!-- ================= 1 & 2. version screens (built by JS) ================= -->
+    <section id="s-v1" class="screen hidden"></section>
+    <section id="s-v2" class="screen hidden"></section>
+
+    <!-- ================= 3. head to head ================= -->
+    <section id="s-h2h" class="screen hidden">
+      <div class="card">
+        <p class="eyebrow">Last step</p>
+        <h1>Comparing the two videos</h1>
+        <p>You've now seen both. One last set of questions and you're done.</p>
+        <div id="h2h-qs"></div>
+        <div style="margin-top:22px">
+          <button id="btn-submit">Submit my feedback</button>
+        </div>
+        <div class="err" id="err-h2h"></div>
+      </div>
+    </section>
+
+    <!-- ================= 4. done ================= -->
+    <section id="s-done" class="screen hidden">
+      <div class="card">
+        <p class="eyebrow">Saved</p>
+        <h1>Thank you — your feedback is recorded</h1>
+        <p>Copy this completion code and paste it into CloudResearch Connect to submit the task.</p>
+        <div class="code" id="done-code"></div>
+        <p class="small hidden" id="done-redirect">Sending you back to CloudResearch Connect now. If nothing happens in a few seconds, paste the code above instead.</p>
+        <p class="small" id="done-receipt"></p>
+      </div>
+    </section>
+
+    <!-- ================= 4b. submit failed fallback ================= -->
+    <section id="s-fallback" class="screen hidden">
+      <div class="card">
+        <p class="eyebrow">Almost there</p>
+        <h1>We couldn't reach our server</h1>
+        <p>Your answers are safe in this page. Please do both of these so you still get paid in full:</p>
+        <ol>
+          <li style="margin-bottom:8px">Press <strong>Try again</strong>. This usually works on the second attempt.</li>
+          <li>If it still fails, copy the text in the box and paste it into the message box on CloudResearch Connect along with the completion code.</li>
+        </ol>
+        <p><button id="btn-retry" class="ghost">Try again</button></p>
+        <textarea id="fallback-json" readonly style="min-height:150px;font:400 12px/1.5 ui-monospace,Menlo,Consolas,monospace"></textarea>
+        <div class="code" id="fallback-code" style="margin-top:16px"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+/* ===========================================================================
+   Embrace CloudResearch pilot — rater instrument
+   Bump FORM_VERSION on every change that could affect the data, and tag the
+   commit with the same string. That pairing is the audit trail.
+   =========================================================================== */
+const FORM_VERSION = "1.2.0";
+
+const CFG = window.STUDY_CONFIG;
+const $  = (s, r = document) => r.querySelector(s);
+const url = new URLSearchParams(location.search);
+
+/* ---------- participant id: Connect sends it on the URL ---------- */
+const PID = url.get("participantId") || url.get("PROLIFIC_PID") ||
+            url.get("workerId")      || url.get("pid")          || "";
+const SELFTEST = url.get("selftest") === "1";
+
+/* ---------- pair assignment ---------- */
+/* A pair only goes live when BOTH its clips exist for the backend in use, so an
+   unfinished pair can sit in config.js as enabled:false and be silently skipped. */
+const ready = v => CFG.videoSource === "file"
+  ? !!v.src && !v.src.includes("example.com")
+  : !!v.yt  && v.yt !== "REPLACE_YT_ID";
+const live = CFG.pairs.filter(p => p.enabled && p.versions.every(ready));
+let PAIR = null, SLOTS = [];
+
+function hash(s){ let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+function setPair(pair, nth, source){
+  PAIR = pair;
+  SLOTS = nth % 2 === 0 ? [PAIR.versions[0], PAIR.versions[1]]
+                        : [PAIR.versions[1], PAIR.versions[0]];
+  D.assign_source = source; D.assign_nth = nth;
+}
+
+/* Fallback only. Deterministic per participant so a refresh can't reroll. */
+function assignLocal(){
+  const seed = hash((PID || "anon") + CFG.studyTag);
+  setPair(live[seed % live.length], (seed >>> 8) % 2, "local");
+}
+
+/* The endpoint hands out whichever pair currently has the fewest raters, and an index
+   the form uses to alternate A/B order. Random per-browser assignment leaves some pair
+   short about 61% of the time at n=35; this keeps the cells even without anyone
+   watching them. If the call fails for any reason we fall back to the local hash, so a
+   flaky network costs balance rather than the session. */
+async function assign(){
+  if (!live.length) return false;
+  const forced = url.get("pair");
+  if (forced) {
+    const p = live.find(x => x.id === forced);
+    if (!p) return false;
+    setPair(p, hash(PID || "anon") % 2, "forced");
+    return true;
+  }
+  const q = CFG.endpoint + "?action=assign"
+          + "&token=" + encodeURIComponent(CFG.formToken)
+          + "&pid="   + encodeURIComponent(PID || "anon")
+          + "&pairs=" + encodeURIComponent(live.map(p => p.id).join(","));
+  /* Retry, for the same reason submit() does. Apps Script web apps served to
+     anonymous callers intermittently return Google's "Page Not Found" HTML
+     instead of the script's JSON - measured at roughly 1 request in 4 from this
+     deployment. A single attempt therefore drops about a quarter of raters onto
+     the local hash, which is exactly the imbalance the server assignment exists
+     to prevent. Three attempts takes that to a few percent. Retrying is safe:
+     the endpoint returns the same pair for a pid it has already seen
+     (`repeat: true`), so a retry cannot consume a second slot. */
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(q);
+      const j = await r.json();
+      const p = j && j.ok && live.find(x => x.id === j.pair);
+      if (p) { setPair(p, Number(j.nth) || 0, j.repeat ? "server-repeat" : "server"); return true; }
+    } catch (e) { /* retry */ }
+    if (attempt < 3) await new Promise(r => setTimeout(r, 700 * attempt));
+  }
+  assignLocal();
+  return !!PAIR;
+}
+
+/* ---------- state ---------- */
+const D = {
+  ts_client: new Date().toISOString(),
+  study_tag: CFG.studyTag, form_version: FORM_VERSION,
+  participant_id: PID, is_selftest: SELFTEST ? "yes" : "no",
+  user_agent: navigator.userAgent, screen_w: screen.width, screen_h: screen.height,
+  tz: Intl.DateTimeFormat().resolvedOptions().timeZone, referrer: document.referrer || "",
+  completion_code: CFG.completionCode
+};
+const t0 = Date.now();
+const watch = { 1:blank(), 2:blank() };
+function blank(){ return { watched:0, duration:0, seekFwd:0, seekBack:0, errors:0, last:null, open:false, enter:0, maxRate:1 }; }
+
+/* ---------- question spec (identical for both versions) ---------- */
+const QS = [
+  { id:"overall", t:"scale", q:"Overall, how would you rate this training video?", lo:"Poor", hi:"Excellent" },
+  { id:"visuals", t:"scale", q:"The slides and on-screen visuals", lo:"Poor", hi:"Excellent" },
+  { id:"audio",   t:"scale", q:"The narration and sound", lo:"Poor", hi:"Excellent" },
+  { id:"pacing",  t:"scale", q:"The pacing — could you follow it comfortably?", lo:"Too slow or too fast", hi:"Just right" },
+  { id:"ai_read", t:"choice", q:"Did the narration sound like a real person, or like it was computer-generated?",
+    opts:["Definitely a real person","Probably a real person","Not sure","Probably computer-generated","Definitely computer-generated"] },
+  { id:"errors", t:"choice", q:"Did you notice any mistakes — typos on screen, wrong or mispronounced words, anything that looked unfinished?",
+    opts:["No, nothing I noticed","Yes, one or two","Yes, several"] },
+  { id:"errors_detail", t:"short", q:"What did you notice?", optional:true,
+    showIf:{ id:"errors", vals:["Yes, one or two","Yes, several"] } },
+  { id:"standby", t:"scale", q:"If you worked in senior care, how confidently would you stand behind this training for a new coworker?",
+    lo:"Not at all", hi:"Completely" },
+  { id:"codeword", t:"short", q:"What was the code word shown on screen during this video?" },
+  { id:"comment", t:"area", q:"In your own words: what worked, and what didn't?", min:() => CFG.minCommentChars }
+];
+
+const H2H = [
+  { id:"h2h_choice", t:"choice", q:"Which of the two videos did you think was better?",
+    opts:["The first video","The second video"] },
+  { id:"h2h_why", t:"area", q:"Why? Be as specific as you can about what made the difference.", min:() => CFG.minWhyChars },
+  { id:"h2h_confidence", t:"scale", q:"How sure are you about that choice?", lo:"Not sure at all", hi:"Very sure" },
+  { id:"h2h_other", t:"area", q:"Anything else you want us to know?", optional:true }
+];
+
+/* ---------- question rendering ---------- */
+function renderQ(spec, prefix, host){
+  const wrap = document.createElement("div");
+  wrap.className = "q";
+  wrap.dataset.qid = prefix + spec.id;
+  if (spec.showIf) wrap.classList.add("hidden");
+
+  const lab = document.createElement("label");
+  lab.className = "qlabel";
+  lab.innerHTML = spec.q + (spec.optional ? ' <span class="small">(optional)</span>' : ' <span class="req">*</span>');
+  wrap.appendChild(lab);
+
+  const name = prefix + spec.id;
+
+  if (spec.t === "scale") {
+    const row = document.createElement("div"); row.className = "scale";
+    row.innerHTML =
+      `<div class="end">${spec.lo}</div><div class="opts">` +
+      [1,2,3,4,5].map(n =>
+        `<label tabindex="0" data-v="${n}"><input type="radio" name="${name}" value="${n}">${n}</label>`).join("") +
+      `</div><div class="end" style="text-align:right;justify-content:flex-end">${spec.hi}</div>`;
+    wrap.appendChild(row);
+    bindRadios(row, name);
+  } else if (spec.t === "choice") {
+    const box = document.createElement("div"); box.className = "choice";
+    box.innerHTML = spec.opts.map(o =>
+      `<label tabindex="0" data-v="${esc(o)}"><input type="radio" name="${name}" value="${esc(o)}">${o}</label>`).join("");
+    wrap.appendChild(box);
+    bindRadios(box, name);
+  } else {
+    const el = document.createElement(spec.t === "area" ? "textarea" : "input");
+    if (spec.t === "short") el.type = "text";
+    el.name = name;
+    wrap.appendChild(el);
+    if (spec.min) {
+      const c = document.createElement("div"); c.className = "counter";
+      const need = spec.min();
+      const paint = () => {
+        const n = el.value.trim().length;
+        c.textContent = n >= need ? "Thank you — that's plenty." : `${n} of ${need} characters minimum`;
+        c.classList.toggle("ok", n >= need);
+      };
+      el.addEventListener("input", paint); paint();
+      wrap.appendChild(c);
+    }
+    el.addEventListener("paste", () => { D[prefix + "paste_count"] = (D[prefix + "paste_count"] || 0) + 1; });
+  }
+  host.appendChild(wrap);
+}
+
+function bindRadios(root, name){
+  root.querySelectorAll("label").forEach(l => {
+    const set = () => {
+      root.querySelectorAll("label").forEach(x => x.classList.remove("sel"));
+      l.classList.add("sel");
+      l.querySelector("input").checked = true;
+      root.dispatchEvent(new CustomEvent("picked", { bubbles:true, detail:{ name, value:l.dataset.v } }));
+    };
+    l.addEventListener("click", set);
+    l.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); set(); } });
+  });
+}
+function esc(s){ return String(s).replace(/"/g, "&quot;"); }
+
+/* conditional reveal */
+document.addEventListener("picked", e => {
+  document.querySelectorAll(".q").forEach(q => {
+    const qid = q.dataset.qid || "";
+    const spec = [...QS, ...H2H].find(s => qid.endsWith(s.id) && s.showIf);
+    if (!spec) return;
+    const prefix = qid.slice(0, qid.length - spec.id.length);
+    if (e.detail.name === prefix + spec.showIf.id) {
+      q.classList.toggle("hidden", !spec.showIf.vals.includes(e.detail.value));
+    }
+  });
+});
+
+/* ---------- version screen ---------- */
+function buildVersionScreen(slot){
+  const sec = $("#s-v" + slot);
+  sec.innerHTML = `
+    <div class="card">
+      <p class="eyebrow">Video ${slot} of 2</p>
+      <h1>${slot === 1 ? "Watch the first video" : "Now the second video"}</h1>
+      <p>${slot === 1
+        ? "Watch it through, then the questions below will unlock. Remember the code word on screen."
+        : "Same as before — watch it through, then the questions unlock. There's a different code word in this one."}</p>
+      <div class="frame"><div id="yt${slot}"></div></div>
+      <div class="gate" id="gate${slot}">
+        <span id="gate-msg${slot}">Questions unlock as the video plays</span>
+        <div class="bar"><span id="gate-bar${slot}"></span></div>
+        <div class="pct" id="gate-pct${slot}">0%</div>
+      </div>
+    </div>
+    <div class="card locked" id="qs${slot}-card">
+      <h2>Your feedback on video ${slot}</h2>
+      <div id="qs${slot}"></div>
+      <div style="margin-top:22px">
+        <button id="btn-next${slot}">${slot === 1 ? "Continue to the second video" : "Continue to the last questions"}</button>
+      </div>
+      <div class="err" id="err-v${slot}"></div>
+    </div>`;
+  const host = $("#qs" + slot);
+  QS.forEach(s => renderQ(s, "s" + slot + "_", host));
+  $("#btn-next" + slot).addEventListener("click", () => {
+    const miss = validate(QS, "s" + slot + "_");
+    const e = $("#err-v" + slot);
+    if (!watch[slot].open) { e.textContent = "Please finish watching the video first."; e.classList.add("show"); return; }
+    if (miss) { e.textContent = miss; e.classList.add("show"); document.querySelector(`[data-qid="${miss_id}"]`)?.scrollIntoView({ behavior:"smooth", block:"center" }); return; }
+    e.classList.remove("show");
+    collect(QS, "s" + slot + "_");
+    D["s" + slot + "_rate_ms"] = Date.now() - watch[slot].enter;
+    stopPlayer(slot);
+    go(slot === 1 ? 2 : 3);
+  });
+}
+
+let miss_id = "";
+function validate(specs, prefix){
+  for (const s of specs) {
+    const q = document.querySelector(`[data-qid="${prefix + s.id}"]`);
+    if (!q || q.classList.contains("hidden") || s.optional) continue;
+    miss_id = prefix + s.id;
+    if (s.t === "scale" || s.t === "choice") {
+      if (!q.querySelector("input:checked")) return "Please answer every question marked with a star.";
+    } else {
+      const el = q.querySelector("textarea,input");
+      const need = s.min ? s.min() : 1;
+      if (el.value.trim().length < need) {
+        return s.min ? `Please write at least ${need} characters in "${s.q.slice(0, 40)}…"`
+                     : "Please answer every question marked with a star.";
+      }
+    }
+  }
+  miss_id = ""; return null;
+}
+function collect(specs, prefix){
+  specs.forEach(s => {
+    const q = document.querySelector(`[data-qid="${prefix + s.id}"]`);
+    if (!q) return;
+    const el = q.querySelector("input:checked") || q.querySelector("textarea,input[type=text]");
+    D[prefix + s.id] = q.classList.contains("hidden") ? "" : (el ? el.value.trim() : "");
+  });
+}
+
+/* ---------- players + watch gate ----------
+   Two backends behind one interface. The polling loop below only ever calls
+   getCurrentTime / getDuration / getPlayerState / pauseVideo, so the gate, the
+   data schema and analysis.py are identical whichever backend is in use. */
+const USE_FILE = CFG.videoSource === "file";
+let YT_READY = USE_FILE, pending = null;
+const players = {};
+
+if (!USE_FILE) {
+  window.onYouTubeIframeAPIReady = () => { YT_READY = true; if (pending) { mount(pending); pending = null; } };
+  const tag = document.createElement("script");
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+}
+
+function loadFail(slot, msg){
+  watch[slot].errors++;
+  const el = $("#gate-msg" + slot);
+  if (el) el.textContent = msg;
+  const g = $("#gate" + slot); if (g) g.style.borderColor = "#d8b48a";
+}
+
+function mount(slot){
+  if (players[slot]) return;
+  const p = USE_FILE ? mountFile(slot) : mountYouTube(slot);
+  if (p) players[slot] = p;
+}
+
+/* --- self-hosted mp4 --- */
+function mountFile(slot){
+  const v = document.createElement("video");
+  v.src = SLOTS[slot - 1].src;
+  v.controls = true; v.preload = "metadata"; v.playsInline = true;
+  v.setAttribute("controlsList", "nodownload noplaybackrate noremoteplayback");
+  v.disablePictureInPicture = true;
+  v.style.cssText = "position:absolute;inset:0;width:100%;height:100%;background:#0e1013";
+  const host = $("#yt" + slot);
+  host.replaceWith(v); v.id = "yt" + slot;
+
+  /* Seek blocking: rewind any jump past the furthest point genuinely watched.
+     YouTube can only decline to credit skipped time; here we can prevent it. */
+  let furthest = 0;
+  v.addEventListener("timeupdate", () => {
+    if (v.currentTime > furthest && v.currentTime - furthest < 2) furthest = v.currentTime;
+  });
+  if (CFG.blockSeeking) {
+    v.addEventListener("seeking", () => {
+      if (v.currentTime > furthest + 1.0) v.currentTime = furthest;
+    });
+  }
+  v.addEventListener("loadedmetadata", () => { watch[slot].duration = v.duration || 0; paintGate(slot); });
+  v.addEventListener("error", () => loadFail(slot,
+    "This video failed to load. Please refresh the page once; if it still fails, return the task."));
+
+  return {
+    getCurrentTime: () => v.currentTime || 0,
+    getDuration:    () => v.duration || 0,
+    getPlayerState: () => (v.paused || v.ended ? 2 : 1),
+    pauseVideo:     () => { try { v.pause(); } catch(e){} }
+  };
+}
+
+/* --- unlisted youtube --- */
+function mountYouTube(slot){
+  if (!YT_READY) { pending = slot; return null; }
+  return new YT.Player("yt" + slot, {
+    videoId: SLOTS[slot - 1].yt,
+    playerVars: { rel:0, modestbranding:1, playsinline:1, disablekb:0 },
+    events: {
+      onReady: e => { watch[slot].duration = e.target.getDuration() || 0; paintGate(slot); },
+      onError: () => loadFail(slot,
+        "This video failed to load. Please refresh the page once; if it still fails, return the task.")
+    }
+  });
+}
+function stopPlayer(slot){ try { players[slot].pauseVideo(); } catch(e){} }
+
+/* If the YouTube API is blocked or offline, say so instead of showing a dead box. */
+setTimeout(() => {
+  if (USE_FILE || YT_READY) return;
+  [1,2].forEach(slot => {
+    const el = $("#gate-msg" + slot);
+    if (el) el.textContent = "The video player could not load. Check that youtube.com isn't blocked on your network, refresh once, and if it still fails please return the task.";
+    loadFail(slot, "The video player could not load. Check that youtube.com isn't blocked on your network, refresh once, and if it still fails please return the task.");
+  });
+}, 12000);
+
+let lastTick = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const wall = (now - lastTick) / 1000;   // real seconds since the last poll
+  lastTick = now;
+  [1,2].forEach(slot => {
+    const p = players[slot], w = watch[slot];
+    if (!p || !p.getCurrentTime) return;
+    if (!w.duration) { w.duration = p.getDuration() || 0; }
+    const t = p.getCurrentTime(), playing = p.getPlayerState() === 1;
+    if (w.last !== null) {
+      const d = t - w.last;
+      /* Credit is capped at wall-clock time. Video seconds can run ahead of real
+         seconds in exactly one way - the playback-speed control - and without this
+         cap a rater at 2x unlocks a 10-minute clip in 5 minutes of real viewing.
+         Capping at `wall` means speeding up buys nothing: the gate now costs real
+         time no matter how fast the video is set to play. */
+      if (playing && d > 0 && d < 1.6) {
+        w.watched = Math.min(w.duration || Infinity, w.watched + Math.min(d, wall));
+        if (wall > 0.05) w.maxRate = Math.max(w.maxRate, +(d / wall).toFixed(2));
+      }
+      if (d >= 1.6) w.seekFwd++;
+      if (d < -1.0) w.seekBack++;
+    }
+    w.last = t;
+    paintGate(slot);
+  });
+}, 500);
+
+function paintGate(slot){
+  const w = watch[slot];
+  if (!w.duration) return;
+  const pct = Math.min(1, w.watched / (w.duration * CFG.watchGate));
+  const bar = $("#gate-bar" + slot); if (!bar) return;
+  bar.style.width = (pct * 100).toFixed(0) + "%";
+  $("#gate-pct" + slot).textContent = (pct * 100).toFixed(0) + "%";
+  if (pct >= 1 && !w.open) {
+    w.open = true;
+    $("#gate" + slot).classList.add("open");
+    $("#gate-msg" + slot).textContent = "Questions unlocked — thanks for watching";
+    $("#qs" + slot + "-card").classList.remove("locked");
+    try { $("#qs" + slot + "-card").scrollIntoView({ behavior:"smooth", block:"start" }); } catch(e){}
+  }
+}
+
+/* ---------- navigation ---------- */
+const SCREENS = ["#s-intro", "#s-v1", "#s-v2", "#s-h2h", "#s-done"];
+$("#rail").innerHTML = SCREENS.map(() => "<div></div>").join("");
+function go(i){
+  SCREENS.forEach((s, n) => $(s).classList.toggle("hidden", n !== i));
+  $("#s-fallback").classList.add("hidden");
+  [...$("#rail").children].forEach((d, n) => {
+    d.className = n < i ? "done" : n === i ? "now" : "";
+  });
+  window.scrollTo({ top:0, behavior:"smooth" });
+  if (i === 1 || i === 2) { watch[i].enter = Date.now(); mount(i); }
+  save();
+}
+
+/* ---------- local backup so a refresh never loses typed work ---------- */
+const LSK = "embr_pilot_" + CFG.studyTag + "_" + (PID || "anon");
+function save(){ try { localStorage.setItem(LSK, JSON.stringify(D)); } catch(e){} }
+
+/* ---------- submit ---------- */
+function payload(){
+  D.pair_id = PAIR.id; D.cc_code = PAIR.cc;
+  D.slot1_key = SLOTS[0].key; D.slot2_key = SLOTS[1].key;
+  [1,2].forEach(s => {
+    const w = watch[s];
+    D["s" + s + "_watched_sec"]  = Math.round(w.watched);
+    D["s" + s + "_duration_sec"] = Math.round(w.duration);
+    D["s" + s + "_watch_pct"]    = w.duration ? +(w.watched / w.duration).toFixed(3) : "";
+    D["s" + s + "_seek_fwd"]     = w.seekFwd;
+    D["s" + s + "_seek_back"]    = w.seekBack;
+    D["s" + s + "_load_errors"]  = w.errors;
+    D["s" + s + "_max_rate"]     = w.maxRate;
+  });
+  D.h2h_choice_slot = D.h2h_choice === "The first video" ? 1 : 2;
+  D.h2h_choice_key  = SLOTS[D.h2h_choice_slot - 1].key;
+  D.video_source = CFG.videoSource;
+  D.total_ms = Date.now() - t0;
+  D.token = CFG.formToken;
+  return D;
+}
+
+async function submit(){
+  const body = JSON.stringify(payload());
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      // text/plain keeps this a "simple" CORS request — no preflight, which
+      // Apps Script cannot answer.
+      const r = await fetch(CFG.endpoint, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body, redirect:"follow" });
+      const j = await r.json();
+      if (j && j.ok) return j;
+    } catch (e) { /* retry */ }
+    await new Promise(r => setTimeout(r, 900 * attempt));
+  }
+  return null;
+}
+
+$("#btn-submit").addEventListener("click", async () => {
+  const e = $("#err-h2h");
+  /* Belt and braces: refuse to submit unless both gates opened and both rating
+     pages were actually filled in. Nobody reaches this button without doing that
+     in the normal flow, but the button exists in the DOM the whole time. */
+  if (!watch[1].open || !watch[2].open || !D.s1_overall || !D.s2_overall) {
+    e.textContent = "Please watch both videos and answer the questions for each before submitting.";
+    e.classList.add("show"); return;
+  }
+  const miss = validate(H2H, "");
+  if (miss) { e.textContent = miss; e.classList.add("show"); return; }
+  e.classList.remove("show");
+  collect(H2H, "");
+  const btn = $("#btn-submit"); btn.disabled = true; btn.textContent = "Saving…";
+  const res = await submit();
+  if (res) {
+    $("#done-code").textContent = CFG.completionCode;
+    $("#done-receipt").textContent = "Reference: " + (res.rowId || "saved");
+    try { localStorage.removeItem(LSK); } catch(_){}
+    go(4);
+    if (CFG.redirectUrl && !SELFTEST) {
+      $("#done-redirect").classList.remove("hidden");
+      setTimeout(() => { location.href = CFG.redirectUrl; }, 4000);
+    }
+  } else {
+    $("#fallback-json").value = JSON.stringify(payload());
+    $("#fallback-code").textContent = CFG.completionCode;
+    SCREENS.forEach(s => $(s).classList.add("hidden"));
+    $("#s-fallback").classList.remove("hidden");
+    btn.disabled = false; btn.textContent = "Submit my feedback";
+  }
+});
+$("#btn-retry").addEventListener("click", async () => {
+  const res = await submit();
+  if (res) { $("#done-code").textContent = CFG.completionCode;
+    $("#done-receipt").textContent = "Reference: " + (res.rowId || "saved"); go(4); }
+});
+
+/* ---------- boot ---------- */
+(async function boot(){
+  if (!(await assign())) {
+    $("#s-intro").innerHTML = `<div class="card"><h1>This study isn't accepting responses right now</h1>
+      <p>Please return the task — you won't be penalised. Sorry for the trouble.</p></div>`;
+    return;
+  }
+  $("#pid-line").textContent = PID
+    ? "Your CloudResearch ID has been received."
+    : "Note: we didn't receive a CloudResearch ID. Please make sure you opened this link from the Connect task page.";
+  if (!PID && !SELFTEST) { $("#btn-start").disabled = true; }
+  buildVersionScreen(1); buildVersionScreen(2);
+  H2H.forEach(s => renderQ(s, "", $("#h2h-qs")));
+  $("#btn-start").addEventListener("click", () => go(1));
+  go(0);
+})();
+</script>
+</body>
+</html>

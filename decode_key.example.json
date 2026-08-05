@@ -1,0 +1,20 @@
+{
+  "_readme": "PRIVATE. Copy to decode_key.json, fill in, never commit it. This is the only place the opaque labels in config.js are tied to old vs new. Keeping it out of the repo is what keeps the study blind even to someone reading the page source.",
+  "_important": "Randomise WHICH POSITION gets old and which gets new, per pair. If old is always the first label listed in config.js, position alone reveals the mapping and the blind is gone. Note below how old/new alternates unpredictably across pairs - do the same in the real file.",
+  "keys": {
+    "k3ta": { "pair": "P1", "version": "new", "codeword": "harbor" },
+    "k9vm": { "pair": "P1", "version": "old", "codeword": "lantern" },
+
+    "k5qd": { "pair": "P2", "version": "old", "codeword": "meadow" },
+    "k2wj": { "pair": "P2", "version": "new", "codeword": "compass" },
+
+    "k8rn": { "pair": "P3", "version": "new", "codeword": "pebble" },
+    "k4zf": { "pair": "P3", "version": "old", "codeword": "thicket" },
+
+    "k6hb": { "pair": "P4", "version": "new", "codeword": "willow" },
+    "k1ps": { "pair": "P4", "version": "old", "codeword": "quarry" },
+
+    "k7cy": { "pair": "P5", "version": "old", "codeword": "cinder" },
+    "k0lg": { "pair": "P5", "version": "new", "codeword": "trellis" }
+  }
+}
