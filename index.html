@@ -1151,10 +1151,18 @@ $("#btn-retry").addEventListener("click", async () => {
          <p>Please return the task — you won't be penalised. Sorry for the trouble.</p></div>`;
     return;
   }
-  $("#pid-line").textContent = PID
-    ? "Your CloudResearch ID has been received."
-    : "Note: we didn't receive a CloudResearch ID. Please make sure you opened this link from the Connect task page.";
-  if (!PID && !SELFTEST) { $("#btn-start").disabled = true; }
+  /* A paid rater without a CloudResearch id cannot be paid or matched to a task, so
+     the real study refuses to start - better a blocked button than a session nobody
+     can approve.
+     A PREVIEW build has no such problem: reviewers open the bare link from an email,
+     never from Connect, and there is nothing to pay. Requiring an id there just made
+     the Start button dead with no explanation, which is exactly how it was found. */
+  const needsPid = !PID && !SELFTEST && !CFG.demoBanner;
+  $("#pid-line").textContent = CFG.demoBanner
+    ? (PID ? "" : "Preview mode, so no CloudResearch ID is needed.")
+    : (PID ? "Your CloudResearch ID has been received."
+           : "Note: we didn't receive a CloudResearch ID. Please make sure you opened this link from the Connect task page.");
+  if (needsPid) { $("#btn-start").disabled = true; }
   buildVersionScreen(1); buildVersionScreen(2);
   H2H.forEach(s => renderQ(s, "", $("#h2h-qs")));
   $("#btn-start").addEventListener("click", () => go(1));
