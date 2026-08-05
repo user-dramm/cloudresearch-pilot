@@ -269,6 +269,14 @@ def main():
             if side not in sides:
                 print("    %-6s key %-10s code word %-10s RESERVED - source not supplied yet"
                       % (side, key, word))
+                # Record the reservation in the map too, not just on screen. It used
+                # to only print, so the reserved key and its code word survived
+                # nowhere durable - and the whole point of reserving is that when the
+                # render finally arrives weeks later it gets the SAME key and word.
+                # A reservation that exists only in a terminal scrollback is not one.
+                mapping.setdefault(key, {}).update(
+                    {"version": side, "pair_folder": c, "codeword": word,
+                     "status": "RESERVED - source not supplied yet"})
                 continue
             m1, m3 = found[side][1], found[side][3]
             d3 = duration(a.ffmpeg, m3) or 0
