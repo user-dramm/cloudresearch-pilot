@@ -173,6 +173,7 @@
           <li>The two videos in a set come from the same course, so watch both before answering — the questions ask about the set, not about one video.</li>
           <li>The questions unlock once a video has actually played through, so please watch rather than skip ahead. Fast-forwarding doesn't count toward the unlock.</li>
           <li>Partway through the <strong>second video of each set</strong> a short <strong>code word</strong> appears on screen. We ask for it afterward, so keep an eye out.</li>
+          <li>Please leave <strong>subtitles / CC turned off</strong> in the player. We've switched them off for you, but if you see a second set of captions appear, click the <strong>CC</strong> button to hide them — some of these videos already have their own text on screen, and two layers at once makes them hard to read.</li>
           <li>Your written comments matter most. The ratings tell us <em>that</em> something worked; only your own words tell us <em>why</em>, and that is the part we cannot get any other way.</li>
         </ul>
 
@@ -935,9 +936,23 @@ function mountYouTube(slot, i, videoId){
   if (!YT_READY) return null;
   return new YT.Player("yt" + vk(slot, i), {
     videoId: videoId,
-    playerVars: { rel:0, modestbranding:1, playsinline:1, disablekb:0 },
+    /* cc_load_policy:0 means "don't force captions on". It is not enough on its
+       own: a viewer whose YouTube account defaults captions to on still gets them,
+       and that is a real confound here rather than a cosmetic one. The recreated
+       videos carry captions BURNED INTO THE PICTURE, so YouTube's caption layer on
+       top gives the new side doubled, overlapping text while the archived side gets
+       a single clean layer. A rater would score that difference, and it comes from a
+       player setting rather than from anything the pipeline did. */
+    playerVars: { rel:0, modestbranding:1, playsinline:1, disablekb:0, cc_load_policy:0 },
     events: {
-      onReady: e => { watch[slot].vids[i].duration = e.target.getDuration() || 0; paintGate(slot, i); },
+      onReady: e => {
+        /* Actually switch captions off, rather than hoping the default holds. Both
+           module names are tried: the modern player uses "captions", older builds
+           used "cc", and unloading a module that is not present is harmless. */
+        ["captions", "cc"].forEach(m => { try { e.target.unloadModule(m); } catch (_) {} });
+        watch[slot].vids[i].duration = e.target.getDuration() || 0;
+        paintGate(slot, i);
+      },
       onError: () => loadFail(slot, i,
         "This video failed to load. Please refresh the page once; if it still fails, return the task.")
     }
