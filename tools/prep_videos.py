@@ -150,9 +150,21 @@ def main():
                     help="where to write the key -> side/codeword mapping")
     ap.add_argument("--course", action="append",
                     help="only this course folder (repeatable); default all")
-    ap.add_argument("--keys", default="",
-                    help="comma-separated opaque keys to use, in course order, "
-                         "two per course. Default: read from config.js order.")
+    ap.add_argument("--assign", action="append", default=[], metavar="SPEC",
+                    help="explicit per-course assignment, repeatable:\n"
+                         "  --assign '158=old:k5qd:cobalt,new:k2wj:juniper'\n"
+                         "Naming the course, the side, the opaque key and the code word "
+                         "together is deliberate. An earlier version took two parallel "
+                         "lists positionally and relied on courses being iterated in the "
+                         "order they were given - but they are iterated SORTED, so '176' "
+                         "came before '51' and every key landed on the wrong course. "
+                         "That is the one error this study would report confidently in "
+                         "the wrong direction, so ordering is now impossible to get "
+                         "wrong: nothing is implied by position.")
+    ap.add_argument("--allow-partial", action="store_true",
+                    help="process a side that has modules 1 and 3 even when the other "
+                         "side is missing. For pairs whose new version is still being "
+                         "built - the archived side can be embedded and uploaded now.")
     ap.add_argument("--ffmpeg", default="ffmpeg")
     ap.add_argument("--fontfile", default="/System/Library/Fonts/Supplemental/Arial.ttf",
                     help="pinned rather than left to fontconfig, so the overlay cannot "
@@ -169,20 +181,50 @@ def main():
     if a.course:
         courses = [c for c in courses if c in a.course]
 
-    keys = [k.strip() for k in a.keys.split(",") if k.strip()]
-    mapping, wi, ki = {}, 0, 0
+    # {course: {side: (key, word)}} - parsed from --assign, no positional meaning.
+    assign = {}
+    for spec in a.assign:
+        if "=" not in spec:
+            sys.exit("bad --assign %r, expected COURSE=side:key:word,side:key:word" % spec)
+        course, rest = spec.split("=", 1)
+        for part in rest.split(","):
+            bits = part.split(":")
+            if len(bits) != 3 or bits[0] not in ("old", "new"):
+                sys.exit("bad --assign entry %r, expected old|new:key:word" % part)
+            assign.setdefault(course.strip(), {})[bits[0]] = (bits[1].strip(), bits[2].strip())
+
+    # Merge, never overwrite. The map is the blind, and it is built up across runs
+    # as sides become available - clobbering it would lose the old/new mapping for
+    # pairs processed earlier, which is unrecoverable once the sources are gone.
+    map_path = os.path.expanduser(a.map)
+    mapping = {}
+    if os.path.exists(map_path):
+        try:
+            mapping = json.load(open(map_path))
+            print("  merging into existing map (%d key(s) already recorded)" % len(mapping))
+        except ValueError:
+            sys.exit("existing map at %s is not valid JSON - move it aside" % map_path)
+
+    wi = 0
     ready, skipped = [], []
 
     for c in courses:
         cdir = os.path.join(src, c)
         found = find_pairs(cdir)
         have = {s: sorted(found[s]) for s in ("old", "new")}
-        if not (1 in found["old"] and 3 in found["old"]
-                and 1 in found["new"] and 3 in found["new"]):
-            skipped.append("%s: old has %s, new has %s - needs modules 1 and 3 on both"
-                           % (c, have["old"] or "nothing", have["new"] or "nothing"))
+        complete = {s for s in ("old", "new") if 1 in found[s] and 3 in found[s]}
+        if len(complete) == 2:
+            ready.append((c, found, ["old", "new"]))
+        elif complete and a.allow_partial:
+            ready.append((c, found, sorted(complete)))
+            skipped.append("%s: doing the %s side only, %s missing"
+                           % (c, "/".join(sorted(complete)),
+                              "/".join(sorted({"old", "new"} - complete))))
+        else:
+            skipped.append("%s: old has %s, new has %s - needs modules 1 and 3%s"
+                           % (c, have["old"] or "nothing", have["new"] or "nothing",
+                              " on both (pass --allow-partial for one side)"))
             continue
-        ready.append((c, found))
 
     print("=" * 78)
     print("PREP  %d course(s) ready, %d incomplete" % (len(ready), len(skipped)))
@@ -193,15 +235,20 @@ def main():
         sys.exit("\nNothing to do.")
 
     os.makedirs(out, exist_ok=True)
-    for c, found in ready:
+    for c, found, sides in ready:
         print("\n  course %s" % c)
-        # Randomising which side gets the first key is done by the caller passing
-        # keys in the intended order; this loop keeps a fixed old,new order so the
-        # mapping written out is unambiguous.
         for side in ("old", "new"):
-            key = keys[ki] if ki < len(keys) else "%s_%s" % (c, side)
-            ki += 1
-            word = WORD_POOL[wi % len(WORD_POOL)]; wi += 1
+            spec = assign.get(c, {}).get(side)
+            if spec:
+                key, word = spec
+            else:
+                key = "%s_%s" % (c, side)
+                word = WORD_POOL[wi % len(WORD_POOL)]
+                wi += 1
+            if side not in sides:
+                print("    %-6s key %-10s code word %-10s RESERVED - source not supplied yet"
+                      % (side, key, word))
+                continue
             m1, m3 = found[side][1], found[side][3]
             d3 = duration(a.ffmpeg, m3) or 0
             at = round(d3 * 0.45, 2)
@@ -236,9 +283,17 @@ def main():
                 if not good:
                     print("           *** the overlay did not render. Do not upload this file.")
 
-    with open(os.path.expanduser(a.map), "w") as f:
+    if a.dry_run:
+        # A dry run must not write. The earlier version did, and a dry run whose
+        # assignments turned out to be wrong silently corrupted the real map - the
+        # one file that records which side is which and cannot be reconstructed
+        # once the sources are gone.
+        print("\n  --dry-run: nothing encoded, map NOT written")
+        return
+
+    with open(map_path, "w") as f:
         json.dump(mapping, f, indent=1)
-    print("\n  mapping written to %s" % a.map)
+    print("\n  mapping written to %s" % map_path)
     print("  THIS FILE IS THE BLIND. It says which key is old and which is new.")
     print("  Fold it into decode_key.json and never commit either.")
 
