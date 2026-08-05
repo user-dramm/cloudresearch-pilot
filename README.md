@@ -336,13 +336,47 @@ counting completed responses plus assignments from the last 45 minutes that have
 It also returns `nth`, which the form uses to alternate A/B order within the pair. The
 `assignments` tab records every handout.
 
-Per-browser random assignment leaves a pair with <=4 raters about 61% of the time at n=35; the
-balanced version keeps every pair within one rater of even in ~91% of simulated runs. If the
-call fails the form falls back to a local hash and records `assign_source: local`, so you can
-tell from the data whether balancing was in effect for any given row.
+### Measured, not claimed
 
-`?pair=P3` on the URL overrides everything, which is how you force a specific pair for testing
-or run five separate exactly-balanced studies if you'd rather.
+An earlier version of this file said the balancer keeps every pair within one rater of even in
+"~91% of simulated runs". **It does not.** Re-simulated 4,000 times with 20% abandonment and
+the real 45-minute pending window:
+
+| Scenario | Within 1 of even | Mean smallest cell | A pair left <=4 |
+|---|---|---|---|
+| Per-browser random, 35 launched | 1% | 3.0 | 93% |
+| Balanced, 35 launched | 72% | 5.0 | 21% |
+| Balanced, endpoint failing 25% | 51% | 4.8 | 27% |
+| Balanced + 3x retry, 35 launched | 70% | 5.0 | 21% |
+| **Balanced + retry, 44 launched** | 67% | **6.4** | **0.7%** |
+
+The design is well justified - random assignment is a disaster, and worse than the old figure
+admitted - but the specific 91% was wrong, so it is corrected here rather than repeated.
+
+**Launch about 44, not 35.** Connect pays only completions, so ordering 35 lands roughly 28,
+and at 28 completions some pair sits at 4 raters or fewer in a fifth of runs. Clause 1 asks
+whether new is ahead *within each pair*; four raters cannot answer that. Launching ~44 to land
+~35 puts the smallest cell at 6.4 on average and a thin pair under 1%.
+
+**The retry matters.** This deployment returns Google's HTML error page instead of JSON on
+roughly one anonymous request in four. Every failure drops that rater onto the local hash, and
+at a 25% failure rate balance falls from 72% to 51%. `assign()` therefore retries three times,
+which restores it to 70%. Retrying is safe because the endpoint returns a participant's
+existing assignment (`repeat: true`) rather than issuing a second one.
+
+If the call fails all three times the form falls back to a local hash and records
+`assign_source: local`, so you can tell from the data whether balancing was in effect for any
+given row.
+
+Two known limits, both visible in the data rather than hidden:
+
+- `nth` (which drives A/B order) is the pair's count at assignment time, so an abandoned
+  session can hand the same `nth` to the next rater and repeat an order. `analysis.py` reports
+  the position effect, which is where that would show up.
+- `?pair=P3` on the URL overrides everything. That is how you force a pair for testing, and it
+  records `assign_source: forced`, so a row that used it is identifiable.
+
+Reproduce any of the above with `tools/assign_sim.py`.
 
 ## Reusing this for the monthly program
 
