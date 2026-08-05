@@ -325,17 +325,25 @@ function assignLocal(){
    flaky network costs balance rather than the session. */
 async function assign(){
   if (!live.length) return false;
+
+  /* `?pair=P2` pins the pair. Used two ways: forcing a specific pair while testing,
+     and running one Connect study per pair so each cell fills to exactly its quota
+     instead of relying on the balancer to land evenly.
+     It still asks the endpoint - just with a one-item list - so `nth` comes from
+     that pair's real running count and the A/B order keeps alternating. Deciding
+     order from a hash of the participant id instead, as this used to, leaves order
+     to chance: across only 7 raters a hash can easily come out 5:2, and order is
+     the one nuisance variable the design is built to cancel. */
   const forced = url.get("pair");
+  let ids = live.map(p => p.id);
   if (forced) {
-    const p = live.find(x => x.id === forced);
-    if (!p) return false;
-    setPair(p, hash(PID || "anon") % 2, "forced");
-    return true;
+    if (!live.find(x => x.id === forced)) return false;
+    ids = [forced];
   }
   const q = CFG.endpoint + "?action=assign"
           + "&token=" + encodeURIComponent(CFG.formToken)
           + "&pid="   + encodeURIComponent(PID || "anon")
-          + "&pairs=" + encodeURIComponent(live.map(p => p.id).join(","));
+          + "&pairs=" + encodeURIComponent(ids.join(","));
   /* Retry, for the same reason submit() does. Apps Script web apps served to
      anonymous callers intermittently return Google's "Page Not Found" HTML
      instead of the script's JSON - measured at roughly 1 request in 4 from this
@@ -352,6 +360,14 @@ async function assign(){
       if (p) { setPair(p, Number(j.nth) || 0, j.repeat ? "server-repeat" : "server"); return true; }
     } catch (e) { /* retry */ }
     if (attempt < 3) await new Promise(r => setTimeout(r, 700 * attempt));
+  }
+  /* Endpoint unreachable. A PINNED pair must stay pinned: falling through to
+     assignLocal() would pick from every live pair and quietly hand this rater a
+     different course, breaking the one-study-per-pair setup and mislabelling the
+     row. Order falls back to a hash, which is all that is left without the server. */
+  if (forced) {
+    setPair(live.find(x => x.id === forced), hash(PID || "anon") % 2, "forced-local");
+    return true;
   }
   assignLocal();
   return !!PAIR;
