@@ -17,7 +17,7 @@ Standard library only - no pip install, no version drift.
     python3 analysis.py responses.csv --key decode_key.json --include-excluded
 """
 
-import argparse, csv, json, statistics as st, sys
+import argparse, csv, json, re, statistics as st, sys
 from collections import defaultdict
 from math import comb
 
@@ -26,6 +26,14 @@ MIN_PAIRS_WON     = 4
 MIN_POOLED_PREF   = 0.65
 MAX_P             = 0.05
 MIN_OVERALL_DELTA = 0.50
+# The study tag every real row must carry. Demo and preview builds set a different
+# studyTag in config.js, and they post to the SAME endpoint and the same Sheet - so
+# without this filter a colleague clicking through a demo lands a row that looks
+# like a paid response and gets analysed. Relying on whoever shares the link to
+# remember `?selftest=1` is not a control. Pass --tag to override, --tag "" to
+# disable the check entirely.
+STUDY_TAG = "pilot-2026-07"
+
 # ---- quality gates ---------------------------------------------------------
 MIN_WATCH_PCT     = 0.85   # a hair under the 0.90 form gate, for timer slop
 MIN_SESSION_SEC   = 480    # absolute floor, used only when durations didn't record
@@ -42,7 +50,76 @@ MAX_PLAYBACK_RATE = 1.25   # video seconds per real second; >1 means sped-up pla
 # not have played them both. The flat floor remains as a backstop for rows where
 # duration failed to record.
 
-AI_FLAG = {"Probably computer-generated", "Definitely computer-generated"}
+# ---- speaker block --------------------------------------------------------
+# The form no longer asks whether the narration sounded computer-generated. That
+# question named the hypothesis, and anything asked after it was contaminated.
+# Instead a rater says whether the speaker "did well", "was okay", or that
+# "something seemed off", and only the last group is shown a tick-any list of
+# specific problems - one of which is "Sounded fake".
+#
+# So reads-as-AI is now an UNPROMPTED measure: the rater had to volunteer it from
+# a list they only saw after flagging a problem themselves. That is stronger
+# evidence than the old checkbox, and it is why the strings below must stay in
+# step with index.html. If they drift, these diagnostics silently report zero
+# rather than erroring, which is the worst kind of wrong.
+SPEAKER_FLAG = "Something seemed off about the speaker"
+FAKE_OPTION  = "Sounded fake"
+
+# Unprompted mentions in free text count too, and count for more: nobody offered
+# these words. Checked against the opening comment, the speaker-other box and the
+# head-to-head explanation.
+#
+# Matched on WORD BOUNDARIES, not as substrings. "ai" as a substring hits "said",
+# "aid", "waiting" and "explain"; "machine" is safe but "ai" would have quietly
+# inflated this diagnostic on ordinary sentences. Multi-word phrases are matched
+# literally, single words with \b on both sides.
+FAKE_PATTERNS = [
+    r"\brobot(ic|ics)?\b", r"\bai\b", r"\ba\.i\.?\b", r"\bsynthetic\b",
+    r"\bmonotone\b", r"\bmachine\b", r"\brobotically\b",
+    r"computer[\s-]generated", r"text[\s-]to[\s-]speech",
+    r"not a real (person|human|voice)", r"fake voice", r"\btts\b",
+]
+FAKE_RE = re.compile("|".join(FAKE_PATTERNS), re.I)
+
+
+def field(row, name):
+    """Read a response field whether or not the Sheet has a column for it.
+
+    Code.gs writes any field it does not have a HEADERS column for into a single
+    `extra_json` overflow cell, precisely so adding a question to the form can
+    never silently lose data. The speaker questions were added after the Sheet was
+    created, so depending on whether the Apps Script has been redeployed they
+    arrive either in their own column or inside that JSON blob. Reading both means
+    the analysis works either way, and nobody has to touch a live, verified
+    endpoint on a deadline.
+    """
+    v = row.get(name)
+    if v not in (None, ""):
+        return v
+    raw = row.get("extra_json") or ""
+    if not raw:
+        return ""
+    try:
+        return json.loads(raw).get(name, "") or ""
+    except (ValueError, AttributeError):
+        return ""
+
+
+def ticked(row, name):
+    """Split a semicolon-joined multi-select cell back into a list."""
+    return [x.strip() for x in str(field(row, name)).split(";") if x.strip()]
+
+
+def mentions_fake(row, slot):
+    """Did this rater volunteer, in their own words, that the voice wasn't human?
+
+    Unprompted, so it carries more weight than any option we offered. Checks the
+    opening comment for that video, the speaker-other box, and the head-to-head
+    explanation.
+    """
+    blob = " ".join(str(field(row, f) or "") for f in (
+        "s%s_comment" % slot, "s%s_speaker_other" % slot, "h2h_why"))
+    return bool(FAKE_RE.search(blob))
 
 
 def exact_binom_p(k, n, sided="two"):
@@ -82,6 +159,10 @@ def main():
     ap.add_argument("--key", default="decode_key.json")
     ap.add_argument("--include-excluded", action="store_true",
                     help="report on all rows, ignoring quality gates (sensitivity check)")
+    ap.add_argument("--tag", default=STUDY_TAG,
+                    help="only analyse rows carrying this study_tag (default %r). "
+                         "Demo builds post to the same Sheet with a different tag; "
+                         "pass an empty string to disable the check." % STUDY_TAG)
     a = ap.parse_args()
 
     KEY = load_key(a.key)
@@ -92,6 +173,9 @@ def main():
         why = []
         if (r.get("is_selftest") or "").lower() == "yes":
             why.append("selftest")
+        tag = (r.get("study_tag") or "").strip()
+        if a.tag and tag != a.tag:
+            why.append("study_tag %r, not %r" % (tag or "(blank)", a.tag))
         pid = (r.get("participant_id") or "").strip()
         if not pid:
             why.append("no participant id")
@@ -154,9 +238,21 @@ def main():
                 ok = False
                 break
             side = KEY[k]["version"]
-            for field in ("overall", "visuals", "audio", "pacing", "standby"):
-                rec["%s_%s" % (side, field)] = num(r.get("s%s_%s" % (s, field)))
-            rec["%s_ai" % side] = r.get("s%s_ai_read" % s, "") in AI_FLAG
+            # `metric`, not `field` - `field()` is a function in this module now,
+            # and shadowing it here would break every lookup below it.
+            for metric in ("overall", "visuals", "audio", "pacing"):
+                rec["%s_%s" % (side, metric)] = num(r.get("s%s_%s" % (s, metric)))
+
+            # Speaker block. `_flag` is having said something seemed off at all;
+            # `_fake` is the stronger, unprompted signal - either ticking "Sounded
+            # fake" from a list they only reached by flagging a problem themselves,
+            # or using words like robotic or AI in their own free text.
+            rec["%s_spk_flag" % side] = field(r, "s%s_speaker" % s) == SPEAKER_FLAG
+            issues = ticked(r, "s%s_speaker_issues" % s)
+            rec["%s_issues" % side] = issues
+            rec["%s_fake" % side] = (FAKE_OPTION in issues) or mentions_fake(r, s)
+            rec["%s_distract" % side] = field(r, "s%s_speaker_distract" % s)
+
             rec["%s_err" % side] = (r.get("s%s_errors" % s) or "").startswith("Yes")
             rec["%s_slot" % side] = int(s)
         if not ok:
@@ -166,7 +262,11 @@ def main():
             continue
         rec["winner"] = KEY[win_key]["version"]
         rec["winner_slot"] = int(r.get("h2h_choice_slot") or 0)
-        rec["confidence"] = num(r.get("h2h_confidence"))
+        # Magnitude replaced confidence: how big the gap was, not how sure they
+        # felt. MAGNITUDE[0] is "barely any difference", which is how a rater who
+        # genuinely could not tell them apart is recorded despite the forced choice.
+        rec["magnitude"] = field(r, "h2h_magnitude")
+        rec["standby"] = field(r, "standby")
         recs.append(rec)
 
     n = len(recs)
@@ -210,9 +310,9 @@ def main():
         v = [x[f] for x in recs if x.get(f) is not None]
         return st.mean(v) if v else float("nan")
 
-    for field in ("overall", "visuals", "audio", "pacing", "standby"):
-        o, nw = m("old_%s" % field), m("new_%s" % field)
-        print("  %-9s old %.2f   new %.2f   delta %+.2f" % (field, o, nw, nw - o))
+    for metric in ("overall", "visuals", "audio", "pacing"):
+        o, nw = m("old_%s" % metric), m("new_%s" % metric)
+        print("  %-9s old %.2f   new %.2f   delta %+.2f" % (metric, o, nw, nw - o))
     diffs = [x["new_overall"] - x["old_overall"] for x in recs
              if x.get("new_overall") is not None and x.get("old_overall") is not None]
     delta = st.mean(diffs) if diffs else float("nan")
@@ -227,13 +327,63 @@ def main():
     print("  position effect     first-shown video won %d of %d (%.0f%%) - near 50%% means"
           " order is not driving the result" % (slot1_wins, n, slot1_wins / n * 100))
     for side in ("old", "new"):
-        ai = sum(1 for x in recs if x.get("%s_ai" % side))
+        fl = sum(1 for x in recs if x.get("%s_spk_flag" % side))
+        fk = sum(1 for x in recs if x.get("%s_fake" % side))
         er = sum(1 for x in recs if x.get("%s_err" % side))
-        print("  %-3s reads-as-AI %d/%d (%.0f%%)   noticed errors %d/%d (%.0f%%)"
-              % (side, ai, n, ai / n * 100, er, n, er / n * 100))
-    conf = [x["confidence"] for x in recs if x.get("confidence") is not None]
-    if conf:
-        print("  mean confidence in the head-to-head choice: %.2f / 5" % st.mean(conf))
+        print("  %-3s speaker flagged %d/%d (%.0f%%)   sounded fake %d/%d (%.0f%%)"
+              "   on-screen errors %d/%d (%.0f%%)"
+              % (side, fl, n, fl / n * 100, fk, n, fk / n * 100, er, n, er / n * 100))
+    print("      'sounded fake' is unprompted - the option only appears after a rater has")
+    print("      already said something seemed off, or they used the words themselves")
+
+    # What specifically was wrong with the speaker, per side. This is the whole
+    # reason the probe exists: not how many disliked the voice, but what about it.
+    for side in ("old", "new"):
+        tally = defaultdict(int)
+        for x in recs:
+            for i in x.get("%s_issues" % side, []):
+                tally[i] += 1
+        if tally:
+            print("  %-3s speaker issues:  %s" % (side, ",  ".join(
+                "%s %d" % (k, v) for k, v in sorted(tally.items(), key=lambda kv: -kv[1]))))
+    for side in ("old", "new"):
+        d = [x.get("%s_distract" % side) for x in recs if x.get("%s_distract" % side)]
+        if d:
+            bad = sum(1 for x in d if x in ("A little", "Yes, a lot"))
+            print("  %-3s of the %d who flagged the speaker, %d said it distracted from the teaching"
+                  % (side, len(d), bad))
+
+    # Magnitude of the preference. A 70%% win where everyone says "barely any
+    # difference" is a different finding from 70%% saying "much better", and the
+    # criterion alone cannot tell them apart.
+    mag = defaultdict(int)
+    for x in recs:
+        if x.get("magnitude"):
+            mag[x["magnitude"]] += 1
+    if mag:
+        print("  preference size:    %s" % ",  ".join(
+            "%s %d" % (k, mag[k]) for k in
+            ("Barely any difference", "Slightly better", "Clearly better", "Much better")
+            if mag.get(k)))
+        thin = mag.get("Barely any difference", 0)
+        if thin:
+            solid = [x for x in recs if x.get("magnitude") != "Barely any difference"]
+            sw = sum(1 for x in solid if x["winner"] == "new")
+            print("  SENSITIVITY: excluding the %d who saw barely any difference, new wins"
+                  " %d of %d (%.1f%%), p = %.4f"
+                  % (thin, sw, len(solid), sw / len(solid) * 100 if solid else 0,
+                     exact_binom_p(sw, len(solid), "two") if solid else 1.0))
+            print("      a forced choice makes a rater who could not tell them apart still pick")
+            print("      one; this is the honest check on how much of the margin that is")
+
+    sb = defaultdict(int)
+    for x in recs:
+        if x.get("standby"):
+            sb[x["standby"]] += 1
+    if sb:
+        print("  would train a coworker with their pick:  %s"
+              % ",  ".join("%s %d" % (k, v) for k, v in sorted(sb.items())))
+
     agree = [max(v) / sum(v) for v in by_pair.values() if sum(v)]
     if agree:
         print("  mean within-pair rater agreement: %.0f%% (50%% = coin flip, 100%% = unanimous)"

@@ -1,12 +1,17 @@
 PROOF THAT THE ANALYSIS GATE IS NOT RIGGED
-Generated 2026-08-05T17:02:11Z   form_version 1.2.0
+Generated 2026-08-05T18:32:48Z   form_version 1.4.0
 
 One script, two runs: synthetic data with a real effect, and synthetic data
 with none. A gate that prints VALIDATED means nothing until you have watched
 it print NOT VALIDATED on data where nothing is there.
 
-Decode key used here is decode_key.example.json copied verbatim - a placeholder
-mapping for testing. The real old/new call has not been made yet.
+Structure: each rater sees TWO SETS of two videos. A set is one build of the
+course (module 1 then module 3), rated as a whole, because the version is what
+the study compares. slot1/slot2 in the data are the two SETS, so every clause
+of the criterion means exactly what it did before.
+
+Decode key is decode_key.example.json copied verbatim - a placeholder mapping
+for testing. The real old/new call has not been made yet.
 
 ########################################################################
 # RUN 1   --true-pref 0.80        expected: VALIDATED
@@ -22,48 +27,54 @@ excluded            0
 --------------------------------------------------------------------------
 CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
 --------------------------------------------------------------------------
-  P1    new  7 : 0  old   new ahead
-  P2    new  6 : 1  old   new ahead
-  P3    new  5 : 2  old   new ahead
-  P4    new  6 : 1  old   new ahead
-  P5    new  6 : 1  old   new ahead
+  P1    new  6 : 1  old   new ahead
+  P2    new  7 : 0  old   new ahead
+  P3    new  6 : 1  old   new ahead
+  P4    new  7 : 0  old   new ahead
+  P5    new  5 : 2  old   new ahead
 
   pairs where new leads: 5 of 5
 
 --------------------------------------------------------------------------
 CLAUSE 2 - pooled preference (need >= 65%% AND exact binomial p < .05)
 --------------------------------------------------------------------------
-  new preferred in 30 of 35 paired votes = 85.7%
+  new preferred in 31 of 35 paired votes = 88.6%
   exact binomial vs 50%:  two-sided p = 0.0000   one-sided p = 0.0000
   the locked criterion reads two-sided; at n=35 both clauses hold from 24 wins up
 
 --------------------------------------------------------------------------
 CLAUSE 3 - mean 'overall' score (need new - old >= 0.50)
 --------------------------------------------------------------------------
-  overall   old 2.83   new 4.03   delta +1.20
-  visuals   old 3.29   new 4.17   delta +0.89
-  audio     old 3.54   new 3.94   delta +0.40
-  pacing    old 2.89   new 4.06   delta +1.17
-  standby   old 3.11   new 4.14   delta +1.03
+  overall   old 2.94   new 3.97   delta +1.03
+  visuals   old 3.46   new 4.00   delta +0.54
+  audio     old 3.29   new 3.94   delta +0.66
+  pacing    old 3.20   new 4.00   delta +0.80
 
-  within-rater overall delta: mean +1.20  sd 1.11  n 35
+  within-rater overall delta: mean +1.03  sd 0.89  n 35
   within-rater is the number that matters - each rater is their own control
 
 --------------------------------------------------------------------------
 DIAGNOSTICS (context, not part of the criterion)
 --------------------------------------------------------------------------
-  position effect     first-shown video won 19 of 35 (54%) - near 50% means order is not driving the result
-  old reads-as-AI 22/35 (63%)   noticed errors 10/35 (29%)
-  new reads-as-AI 0/35 (0%)   noticed errors 5/35 (14%)
-  mean confidence in the head-to-head choice: 3.80 / 5
-  mean within-pair rater agreement: 86% (50% = coin flip, 100% = unanimous)
+  position effect     first-shown video won 20 of 35 (57%) - near 50% means order is not driving the result
+  old speaker flagged 22/35 (63%)   sounded fake 9/35 (26%)   on-screen errors 15/35 (43%)
+  new speaker flagged 6/35 (17%)   sounded fake 2/35 (6%)   on-screen errors 7/35 (20%)
+      'sounded fake' is unprompted - the option only appears after a rater has
+      already said something seemed off, or they used the words themselves
+  old speaker issues:  Mispronounced a word 10,  Hard to make out some words 10,  Odd pauses or rhythm 6,  Flat or monotone 6,  Volume went up and down 5,  Sounded fake 4
+  new speaker issues:  Odd pauses or rhythm 5,  Mispronounced a word 2,  Hard to make out some words 2,  Flat or monotone 2,  Sounded fake 1,  Volume went up and down 1
+  old of the 22 who flagged the speaker, 15 said it distracted from the teaching
+  new of the 6 who flagged the speaker, 2 said it distracted from the teaching
+  preference size:    Slightly better 9,  Clearly better 19,  Much better 7
+  would train a coworker with their pick:  No 1,  Yes, no reservations 16,  Yes, with some reservations 18
+  mean within-pair rater agreement: 89% (50% = coin flip, 100% = unanimous)
 
 ==========================================================================
 PRE-REGISTERED CRITERION
 ==========================================================================
   [PASS]  new ahead in >= 4 of 5 pairs        (5 of 5)
-  [PASS]  pooled pref >= 65% and p < .05      (85.7%, p = 0.0000)
-  [PASS]  overall delta >= +0.50              (+1.20)
+  [PASS]  pooled pref >= 65% and p < .05      (88.6%, p = 0.0000)
+  [PASS]  overall delta >= +0.50              (+1.03)
 --------------------------------------------------------------------------
   VERDICT: VALIDATED - all three clauses must hold
 ==========================================================================
@@ -82,11 +93,11 @@ excluded            0
 --------------------------------------------------------------------------
 CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
 --------------------------------------------------------------------------
-  P1    new  4 : 3  old   new ahead
-  P2    new  6 : 1  old   new ahead
+  P1    new  2 : 5  old   OLD ahead
+  P2    new  4 : 3  old   new ahead
   P3    new  3 : 4  old   OLD ahead
-  P4    new  4 : 3  old   new ahead
-  P5    new  3 : 4  old   OLD ahead
+  P4    new  6 : 1  old   new ahead
+  P5    new  5 : 2  old   new ahead
 
   pairs where new leads: 3 of 5
 
@@ -100,30 +111,39 @@ CLAUSE 2 - pooled preference (need >= 65%% AND exact binomial p < .05)
 --------------------------------------------------------------------------
 CLAUSE 3 - mean 'overall' score (need new - old >= 0.50)
 --------------------------------------------------------------------------
-  overall   old 2.97   new 3.29   delta +0.31
-  visuals   old 3.34   new 3.03   delta -0.31
-  audio     old 3.46   new 3.40   delta -0.06
-  pacing    old 3.03   new 3.03   delta +0.00
-  standby   old 3.00   new 3.11   delta +0.11
+  overall   old 3.29   new 3.00   delta -0.29
+  visuals   old 3.09   new 3.20   delta +0.11
+  audio     old 3.03   new 3.00   delta -0.03
+  pacing    old 2.94   new 2.97   delta +0.03
 
-  within-rater overall delta: mean +0.31  sd 0.87  n 35
+  within-rater overall delta: mean -0.29  sd 0.99  n 35
   within-rater is the number that matters - each rater is their own control
 
 --------------------------------------------------------------------------
 DIAGNOSTICS (context, not part of the criterion)
 --------------------------------------------------------------------------
-  position effect     first-shown video won 19 of 35 (54%) - near 50% means order is not driving the result
-  old reads-as-AI 25/35 (71%)   noticed errors 10/35 (29%)
-  new reads-as-AI 0/35 (0%)   noticed errors 7/35 (20%)
-  mean confidence in the head-to-head choice: 3.91 / 5
-  mean within-pair rater agreement: 63% (50% = coin flip, 100% = unanimous)
+  position effect     first-shown video won 16 of 35 (46%) - near 50% means order is not driving the result
+  old speaker flagged 25/35 (71%)   sounded fake 9/35 (26%)   on-screen errors 12/35 (34%)
+  new speaker flagged 3/35 (9%)   sounded fake 1/35 (3%)   on-screen errors 8/35 (23%)
+      'sounded fake' is unprompted - the option only appears after a rater has
+      already said something seemed off, or they used the words themselves
+  old speaker issues:  Hard to make out some words 15,  Mispronounced a word 7,  Flat or monotone 7,  Volume went up and down 6,  Odd pauses or rhythm 6,  Sounded fake 4
+  new speaker issues:  Mispronounced a word 2,  Sounded fake 1,  Flat or monotone 1
+  old of the 25 who flagged the speaker, 18 said it distracted from the teaching
+  new of the 3 who flagged the speaker, 3 said it distracted from the teaching
+  preference size:    Barely any difference 12,  Slightly better 23
+  SENSITIVITY: excluding the 12 who saw barely any difference, new wins 15 of 23 (65.2%), p = 0.2100
+      a forced choice makes a rater who could not tell them apart still pick
+      one; this is the honest check on how much of the margin that is
+  would train a coworker with their pick:  No 7,  Yes, no reservations 16,  Yes, with some reservations 12
+  mean within-pair rater agreement: 69% (50% = coin flip, 100% = unanimous)
 
 ==========================================================================
 PRE-REGISTERED CRITERION
 ==========================================================================
   [FAIL]  new ahead in >= 4 of 5 pairs        (3 of 5)
   [FAIL]  pooled pref >= 65% and p < .05      (57.1%, p = 0.4996)
-  [FAIL]  overall delta >= +0.50              (+0.31)
+  [FAIL]  overall delta >= +0.50              (-0.29)
 --------------------------------------------------------------------------
   VERDICT: NOT VALIDATED - all three clauses must hold
 ==========================================================================

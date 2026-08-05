@@ -21,17 +21,27 @@ def build_headers():
          "participant_id", "pair_id", "cc_code", "video_source", "slot1_key", "slot2_key"]
     for s in ("1", "2"):
         h += ["s%s_%s" % (s, f) for f in
-              ("overall", "visuals", "audio", "pacing", "ai_read", "errors", "errors_detail",
-               "standby", "codeword", "comment", "watched_sec", "duration_sec", "watch_pct",
+              ("overall", "visuals", "audio", "pacing", "errors", "errors_detail",
+               "speaker", "speaker_issues", "speaker_other", "speaker_distract",
+               "codeword", "comment", "watched_sec", "duration_sec", "watch_pct",
                "seek_fwd", "seek_back", "load_errors", "max_rate", "rate_ms", "paste_count")]
-    h += ["h2h_choice", "h2h_choice_slot", "h2h_choice_key", "h2h_why", "h2h_confidence",
-          "h2h_other", "paste_count", "assign_source", "assign_nth", "total_ms", "completion_code", "user_agent",
+    h += ["h2h_choice", "h2h_choice_slot", "h2h_choice_key", "h2h_magnitude", "h2h_why",
+          "standby", "h2h_other", "paste_count", "assign_source", "assign_nth", "total_ms",
+          "completion_code", "user_agent",
           "screen_w", "screen_h", "tz", "referrer", "extra_json"]
     return h
 
 
-AI_NEW = ["Definitely a real person", "Probably a real person", "Not sure"]
-AI_OLD = ["Not sure", "Probably computer-generated", "Definitely computer-generated"]
+# The old ai_read question is gone. A rater now says how the speaker was, and only
+# those who flag a problem see a tick-any list of what was wrong. These strings must
+# match index.html, and SPEAKER_FLAG / FAKE_OPTION in analysis.py.
+SPK_GOOD = "The speaker did well"
+SPK_OK   = "The speaker was okay"
+SPK_OFF  = "Something seemed off about the speaker"
+ISSUES   = ["Flat or monotone", "Odd pauses or rhythm", "Mispronounced a word",
+            "Volume went up and down", "Hard to make out some words", "Sounded fake"]
+MAGNITUDE = ["Barely any difference", "Slightly better", "Clearly better", "Much better"]
+STANDBY   = ["Yes, no reservations", "Yes, with some reservations", "No"]
 COMMENT = ("The slides were clear and the narrator was easy to follow throughout, "
            "though a couple of sections felt a little rushed near the end.")
 
@@ -74,11 +84,18 @@ def main():
                 "form_version": "1.0.0", "is_selftest": "no",
                 "participant_id": "CR%05d" % i, "pair_id": pair, "cc_code": "EMBR-CC-XXXXX",
                 "slot1_key": sides[slot[1]][0], "slot2_key": sides[slot[2]][0],
-                "h2h_choice": "The first video" if (slot[1] == "new") == prefers_new else "The second video",
+                # Must match the h2h_choice options in index.html: each side is a
+                # SET of two videos (one version), not a single video.
+                "h2h_choice": "The first set" if (slot[1] == "new") == prefers_new else "The second set",
                 "h2h_choice_slot": 1 if (slot[1] == "new") == prefers_new else 2,
                 "h2h_choice_key": sides["new" if prefers_new else "old"][0],
                 "h2h_why": "The second one held my attention better and the audio was cleaner.",
-                "h2h_confidence": random.choice([3, 4, 4, 5]),
+                # Magnitude tracks how real the effect is, so a true null produces
+                # mostly "barely any difference" and the sensitivity check in
+                # analysis.py has something to bite on.
+                "h2h_magnitude": random.choice(
+                    MAGNITUDE[1:] if a.true_pref > 0.6 else MAGNITUDE[:2]),
+                "standby": random.choice(STANDBY[:2] if prefers_new else STANDBY),
                 "total_ms": random.randint(1_200_000, 1_900_000),
                 "completion_code": "EMBR7K2QX4", "user_agent": "Mozilla/5.0 fake",
                 "screen_w": 1920, "screen_h": 1080, "tz": "America/Chicago",
@@ -87,9 +104,26 @@ def main():
                 side = slot[s]
                 base = 3.1 + (gap if side == "new" else 0.0) + harsh
                 r["s%d_overall" % s] = max(1, min(5, round(random.gauss(base, 0.7))))
-                for f, off in (("visuals", .1), ("audio", .2), ("pacing", -.1), ("standby", 0)):
+                for f, off in (("visuals", .1), ("audio", .2), ("pacing", -.1)):
                     r["s%d_%s" % (s, f)] = max(1, min(5, round(random.gauss(base + off, 0.8))))
-                r["s%d_ai_read" % s] = random.choice(AI_NEW if side == "new" else AI_OLD)
+
+                # Speaker block. The old side flags problems more often, and only a
+                # flagged row gets the probe fields - exactly as the form behaves,
+                # so analysis.py is exercised on realistically sparse data.
+                # The new side flags less often but not never - if it never did, the
+                # new-side diagnostics would print 0% and we would not know whether
+                # that is the data or a bug in the analysis.
+                spk = random.choice([SPK_GOOD, SPK_GOOD, SPK_GOOD, SPK_OK, SPK_OFF]
+                                    if side == "new"
+                                    else [SPK_OK, SPK_OFF, SPK_OFF])
+                r["s%d_speaker" % s] = spk
+                if spk == SPK_OFF:
+                    picks = random.sample(ISSUES, random.randint(1, 3))
+                    r["s%d_speaker_issues" % s] = "; ".join(picks)
+                    r["s%d_speaker_distract" % s] = random.choice(["No", "A little", "Yes, a lot"])
+                    if random.random() < 0.3:
+                        r["s%d_speaker_other" % s] = "The voice sounded robotic to me."
+
                 r["s%d_errors" % s] = random.choice(
                     ["No, nothing I noticed"] * (4 if side == "new" else 2) + ["Yes, one or two"])
                 r["s%d_codeword" % s] = sides[side][1]

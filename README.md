@@ -274,7 +274,36 @@ python3 analysis.py responses.csv --key decode_key.json
 It applies the quality gates first and lists every excluded row with the reason — that list
 is what you work from when approving or rejecting on Connect. Then it prints the three
 pre-registered clauses separately, plus diagnostics that aren't part of the criterion:
-position effect, reads-as-AI rates for each side, and inter-rater agreement.
+position effect, the speaker findings, preference magnitude, and inter-rater agreement.
+
+### How the questions are ordered, and why it isn't arbitrary
+
+The per-video block is a funnel: one broad open question, then the rating scales, then the
+speaker block last. Three deliberate choices, each fixing a measurable defect:
+
+- **The open question comes first.** When closed questions on a topic are asked first,
+  respondents echo those concepts back in the later open answer — so an open question placed
+  after them measures our prompt rather than their reaction.
+- **Every scale point is labelled in words**, not shown as a digit with only the ends named.
+  Fully labelled scales have higher test–retest reliability, and the gain is largest among
+  respondents with less formal education — which is this panel. The submitted value is still
+  1–5, so nothing in this script changes.
+- **The speaker block is last, and nothing follows it.** "Sounded fake" is the only option in
+  the form that reveals what the study tests. It is reached only by a rater who has already
+  said something seemed off, from a tick-any list whose order is randomised (early options in
+  such lists get picked disproportionately) with the other-specify row pinned last.
+
+That makes **reads-as-fake an unprompted measure**, which is why it is worth more than the
+old "did this sound computer-generated?" checkbox it replaced. `analysis.py` also scans the
+free text for volunteered words like *robotic* or *monotone*, matched on word boundaries —
+matching `ai` as a substring would hit "said", "aid" and "explain".
+
+The head-to-head stays a **forced binary choice** with no tie option: paired comparison is
+more discriminative than rating each video alone, and clauses 1 and 2 are computed from that
+one field. A tie option would create a third category the binomial cannot consume. Instead
+the follow-up asks **how much better**, which is how a genuine tie gets recorded — and
+`analysis.py` re-runs the pooled preference excluding everyone who said "barely any
+difference", as the honest check on how much of the margin is coin-flips.
 
 The gates it enforces: selftest rows, missing or duplicate participant IDs, under 85%
 watched on either clip, a wrong code word, a comment under 40 characters, playback faster

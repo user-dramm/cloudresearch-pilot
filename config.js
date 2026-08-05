@@ -54,46 +54,73 @@ window.STUDY_CONFIG = {
      PAIRS
      - enabled:false pairs are auto-excluded from random assignment, so an
        unfinished pair can sit here harmlessly until its clips exist.
-     - versions: exactly two entries. The keys are opaque labels you invent;
-       do not name them old/new. Record the true mapping in decode_key.json.
-     - yt:  the unlisted YouTube video ID (the part after v=)  [youtube mode]
-     - src: a direct https URL to the .mp4                     [file mode]
-       Only the one matching videoSource has to be filled in.
+     - versions: exactly two entries, one per build of the course. The keys are
+       opaque labels you invent; do not name them old/new. Record the true
+       mapping in decode_key.json.
+
+     Each version is shown to the rater as a SECTION of two videos - module 1
+     then module 3 - watched back to back before any question is asked, because
+     what the study compares is the VERSION, not a single module. So each version
+     carries a LIST, in the order they should be watched:
+
+       yts:  [ "moduleOneId", "moduleThreeId" ]        [youtube mode]
+       srcs: [ "https://.../m1.mp4", ".../m3.mp4" ]    [file mode]
+
+     Only the list matching videoSource has to be filled in. A single `yt` or
+     `src` string is still accepted and means a one-video section.
+
+     A version goes live only when EVERY video in it is real, so a half-filled
+     one can sit here harmlessly - a missing module 3 would otherwise let a rater
+     judge a version on half the material and the row would look complete.
+
+     ORDER MATTERS: the code word is burned into the SECOND video of each section.
      ------------------------------------------------------------------------ */
   pairs: [
     {
       id: "P1", cc: "EMBR-CC-00051", enabled: false,
       versions: [
-        { key: "k3ta", yt: "", src: "" },
-        { key: "k9vm", yt: "", src: "" }
+        { key: "k3ta", yts: ["", ""], srcs: ["", ""] },
+        { key: "k9vm", yts: ["", ""], srcs: ["", ""] }
       ]
     },
     {
       id: "P2", cc: "EMBR-CC-00158", enabled: true,
       versions: [
-        { key: "k5qd", yt: "REPLACE_YT_ID", src: "https://clips.example.com/k5qd.mp4" },
-        { key: "k2wj", yt: "REPLACE_YT_ID", src: "https://clips.example.com/k2wj.mp4" }
+        { key: "k5qd", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+                       srcs: ["https://clips.example.com/k5qd_m1.mp4",
+                              "https://clips.example.com/k5qd_m3.mp4"] },
+        { key: "k2wj", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+                       srcs: ["https://clips.example.com/k2wj_m1.mp4",
+                              "https://clips.example.com/k2wj_m3.mp4"] }
       ]
     },
     {
       id: "P3", cc: "EMBR-CC-00162", enabled: true,
       versions: [
-        { key: "k8rn", yt: "REPLACE_YT_ID", src: "https://clips.example.com/k8rn.mp4" },
-        { key: "k4zf", yt: "REPLACE_YT_ID", src: "https://clips.example.com/k4zf.mp4" }
+        { key: "k8rn", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+                       srcs: ["https://clips.example.com/k8rn_m1.mp4",
+                              "https://clips.example.com/k8rn_m3.mp4"] },
+        { key: "k4zf", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+                       srcs: ["https://clips.example.com/k4zf_m1.mp4",
+                              "https://clips.example.com/k4zf_m3.mp4"] }
       ]
     },
     {
       id: "P4", cc: "EMBR-CC-00175", enabled: false,
       versions: [
-        { key: "k6hb", yt: "", src: "" },
-        { key: "k1ps", yt: "", src: "" }
+        { key: "k6hb", yts: ["", ""], srcs: ["", ""] },
+        { key: "k1ps", yts: ["", ""], srcs: ["", ""] }
       ]
     },
     {
       id: "P5", cc: "EMBR-CC-00254", enabled: true,
       versions: [
-        { key: "k7cy", yt: "REPLACE_YT_ID", src: "https://clips.example.com/k7cy.mp4" },
-        { key: "k0lg", yt: "REPLACE_YT_ID", src: "https://clips.example.com/k0lg.mp4" }
+        { key: "k7cy", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+                       srcs: ["https://clips.example.com/k7cy_m1.mp4",
+                              "https://clips.example.com/k7cy_m3.mp4"] },
+        { key: "k0lg", yts: ["REPLACE_YT_ID", "REPLACE_YT_ID"],
+                       srcs: ["https://clips.example.com/k0lg_m1.mp4",
+                              "https://clips.example.com/k0lg_m3.mp4"] }
       ]
     }
   ]
