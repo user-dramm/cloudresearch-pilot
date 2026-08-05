@@ -11,10 +11,10 @@
                   even if they never touch ?selftest=1. Relying on people to
                   remember a URL parameter is not a control.
 
-     watchGate    0.15 instead of 0.90, so a reviewer meets the gate in about 40
-                  seconds per video rather than four minutes. The banner says so
-                  on screen; without that a reviewer would reasonably report the
-                  gate as broken.
+     watchGate    0.05 instead of 0.90, so a reviewer clears each video in about
+                  15 seconds rather than four minutes - roughly a minute of watching
+                  across all four. The banner says so on screen; without that a
+                  reviewer would reasonably report the gate as broken.
 
      demoBanner   a visible notice on every screen. A reviewer who believes they
                   are seeing the real study gives feedback on the wrong thing.
@@ -44,22 +44,24 @@ window.STUDY_CONFIG = {
   completionCode: "DEMO-NO-CODE",
   redirectUrl: "",
 
-  /* 15% instead of 90%. NOT the study value - see the banner. */
-  watchGate: 0.15,
+  /* 5% instead of 90%. NOT the study value - see the banner. */
+  watchGate: 0.05,
 
   minCommentChars: 60,
   minWhyChars: 80,
 
   demoBanner:
     "<strong>Preview, not the real study.</strong> You are looking at the rater " +
-    "instrument so you can review the questions, the wording and the flow. Two " +
+    "instrument so you can review the questions, the wording and the flow. Three " +
     "differences from the live version: each video unlocks after about " +
-    "<strong>15%</strong> of it has played rather than 90%, so you are not here for " +
-    "20 minutes; and the two videos in a set are unrelated stand-ins, so the " +
-    "“which set was better” answer is meaningless here. Everything else " +
-    "— the watch gate, the questions, the conditional follow-ups — is exactly " +
-    "what a paid rater will get. Your answers are tagged as a preview and are " +
-    "excluded from the analysis automatically.",
+    "<strong>5%</strong> of it has played rather than 90%, so the whole thing takes " +
+    "a couple of minutes; the two videos in a set are unrelated stand-ins, so the " +
+    "“which set was better” answer is meaningless here; and the code-word " +
+    "question is optional, because the code word appears halfway through a video you " +
+    "will not have watched that far into. Everything else — the watch gate, the " +
+    "skip-blocking, the questions, the conditional follow-ups — is exactly what a " +
+    "paid rater will get. Your answers are tagged as a preview and are excluded " +
+    "from the analysis automatically.",
 
   /* Real uploads, but NOT a real pair. Both sets below are the CURRENT build of
      two DIFFERENT courses (00158 and 00162), because at the time this was wired up

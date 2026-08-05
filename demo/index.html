@@ -457,8 +457,16 @@ const QS = [
 
   /* One code word per section, burned into the SECOND video. Placing it in the
      second rather than the first is the point: it proves the rater was still there
-     at the end of the set, where the gate alone only proves the video played. */
-  { id:"codeword", t:"short", q:"What was the code word shown during the second video?" },
+     at the end of the set, where the gate alone only proves the video played.
+
+     OPTIONAL IN A PREVIEW BUILD, and required in the real study. The code word sits
+     at 45% of the video while a preview's gate opens at 5%, and forward seeking is
+     blocked - so a reviewer reaches this question without having seen the word and
+     with no way to go and find it. Required, it would be a wall nobody could pass. */
+  { id:"codeword", t:"short", optional: !!CFG.demoBanner,
+    q: CFG.demoBanner
+       ? "What was the code word shown during the second video? (In this preview you probably didn't reach it - leave blank.)"
+       : "What was the code word shown during the second video?" },
 
   /* 4. The speaker block goes LAST, and nothing follows it, because "Sounded
         fake" is the one option in this whole form that reveals what the study is
@@ -1018,10 +1026,20 @@ setInterval(() => {
              actually watched. They glimpse the skipped-to moment for up to half a
              second, which is the polling interval and cannot be avoided from outside
              the player.
-             Only while the gate is still shut: once someone has genuinely watched
-             their 90% there is nothing left to protect, and rewinding them then would
-             just be obstruction. */
-          if (CFG.blockSeeking && !w.open && p.seekTo && t > w.furthest + 1.5) {
+
+             This used to stop enforcing once the gate opened, on the reasoning that
+             someone who has watched their quota has nothing left to protect. In
+             practice that made the behaviour inconsistent - skipping was blocked, then
+             silently allowed - which reads as a broken page rather than a rule, and in
+             a preview build with a low gate it meant skipping worked almost
+             immediately. Enforced throughout now: one rule, no surprises.
+
+             The exception is the very end. YouTube can report currentTime lurching to
+             the duration as a video finishes, and treating that as a skip would rewind
+             someone at the exact moment they complete it, over and over. So once the
+             furthest point reached is within 3 seconds of the end, stop interfering. */
+          const nearEnd = w.duration && w.furthest >= w.duration - 3;
+          if (CFG.blockSeeking && !nearEnd && p.seekTo && t > w.furthest + 1.5) {
             try {
               p.seekTo(w.furthest, true);
               /* Pretend we were already there, so the correction is not then counted
