@@ -105,8 +105,13 @@ window.STUDY_CONFIG = {
                               "https://clips.example.com/k4zf_m3.mp4"] }
       ]
     },
+    /* Was EMBR-CC-00175 (Cognitive Challenges in Huntington's Disease), swapped
+       2026-08-05 for EMBR-CC-00176 (Movement Challenges in Parkinson's Disease).
+       Both codes exist in Airtable and both are 3-module, 15-minute courses; 176
+       is the one being taken forward. Still disabled: only its archived side has
+       been supplied, so there is nothing to compare against yet. */
     {
-      id: "P4", cc: "EMBR-CC-00175", enabled: false,
+      id: "P4", cc: "EMBR-CC-00176", enabled: false,
       versions: [
         { key: "k6hb", yts: ["", ""], srcs: ["", ""] },
         { key: "k1ps", yts: ["", ""], srcs: ["", ""] }
