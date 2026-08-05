@@ -392,7 +392,10 @@ const t0 = Date.now();
    s1_watch_pct stays "how much of what they were served did they actually watch"
    and analysis.py needs no change. */
 const watch = { 1:blankSection(), 2:blankSection() };
-function blankVid(){ return { watched:0, duration:0, seekFwd:0, seekBack:0, errors:0, last:null, maxRate:1, open:false, wasPlaying:false }; }
+/* `furthest` is the deepest point genuinely reached by playing, which is what a
+   forward seek gets rewound to. It is NOT the same as `watched`: someone who watches
+   the first two minutes twice has watched 4 minutes but only reached 2. */
+function blankVid(){ return { watched:0, duration:0, seekFwd:0, seekBack:0, errors:0, last:null, maxRate:1, open:false, wasPlaying:false, furthest:0 }; }
 function blankSection(){ return { open:false, enter:0, vids:[] }; }
 /* DOM ids and player keys for one video: section 1's first video is "1_0". */
 function vk(slot, i){ return slot + "_" + i; }
@@ -1005,8 +1008,30 @@ setInterval(() => {
         if (playing && d > 0 && d < 1.6) {
           w.watched = Math.min(w.duration || Infinity, w.watched + Math.min(d, wall));
           if (wall > 0.05) w.maxRate = Math.max(w.maxRate, +(d / wall).toFixed(2));
+          if (t > w.furthest) w.furthest = t;      // the deepest point genuinely reached
         }
-        if (d >= 1.6) w.seekFwd++;
+        if (d >= 1.6) {
+          w.seekFwd++;
+          /* Send them back, rather than only withholding credit. File mode can block
+             a seek before it happens; the YouTube API cannot, so this is the nearest
+             equivalent - detect the jump and return them to the furthest point they
+             actually watched. They glimpse the skipped-to moment for up to half a
+             second, which is the polling interval and cannot be avoided from outside
+             the player.
+             Only while the gate is still shut: once someone has genuinely watched
+             their 90% there is nothing left to protect, and rewinding them then would
+             just be obstruction. */
+          if (CFG.blockSeeking && !w.open && p.seekTo && t > w.furthest + 1.5) {
+            try {
+              p.seekTo(w.furthest, true);
+              /* Pretend we were already there, so the correction is not then counted
+                 as a backward seek by the next tick. */
+              w.last = w.furthest;
+              paintGate(slot, i);
+              return;
+            } catch (_) {}
+          }
+        }
         if (d < -1.0) w.seekBack++;
       }
       w.last = t;
