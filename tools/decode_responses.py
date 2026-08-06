@@ -122,13 +122,9 @@ def main():
             lines.append("      overall %s  voice %s  on-screen %s  clarity %s"
                          % (field(r, "s%s_overall" % s) or "-", field(r, "s%s_audio" % s) or "-",
                             field(r, "s%s_visuals" % s) or "-", field(r, "s%s_clarity" % s) or "-"))
-            spk = field(r, "s%s_speaker" % s)
-            if spk:
-                extra = field(r, "s%s_speaker_issues" % s)
-                dist = field(r, "s%s_speaker_distract" % s)
-                lines.append("      speaker: %s%s%s" % (spk,
-                             ("  [%s]" % extra) if extra else "",
-                             ("  distracting: %s" % dist) if dist else ""))
+            nw = field(r, "s%s_audio_why" % s)
+            if nw:
+                lines.append("      on the narration: \"%s\"" % str(nw)[:80])
             if comment:
                 lines.append("      \"%s\"" % (comment[:96] + ("..." if len(comment) > 96 else "")))
             else:

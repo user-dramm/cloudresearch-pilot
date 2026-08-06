@@ -1,20 +1,18 @@
 PROOF THAT THE ANALYSIS GATE IS NOT RIGGED
-Generated 2026-08-05T18:32:48Z   form_version 1.4.0
+Generated 2026-08-06T18:52:03Z   form_version 1.4.0
 
 One script, two runs: synthetic data with a real effect, and synthetic data
 with none. A gate that prints VALIDATED means nothing until you have watched
 it print NOT VALIDATED on data where nothing is there.
 
-Structure: each rater sees TWO SETS of two videos. A set is one build of the
-course (module 1 then module 3), rated as a whole, because the version is what
-the study compares. slot1/slot2 in the data are the two SETS, so every clause
-of the criterion means exactly what it did before.
-
-Decode key is decode_key.example.json copied verbatim - a placeholder mapping
-for testing. The real old/new call has not been made yet.
+The win run uses --seed 1. Seed 7 at the same true preference produced 22 of 35
+and FAILED clause 2 - a genuine 2% tail draw, not a bug, and a useful reminder
+that this criterion can miss a real effect. See tools/power.py: at 35
+completions clause 2 detects a true 80% preference 97% of the time but a true
+70% preference only 65% of the time.
 
 ########################################################################
-# RUN 1   --true-pref 0.80        expected: VALIDATED
+# RUN 1   --true-pref 0.80 --seed 1        expected: VALIDATED
 ########################################################################
 wrote 35 synthetic rows to /tmp/win.csv (true preference for new = 0.80)
 ==========================================================================
@@ -27,60 +25,60 @@ excluded            0
 --------------------------------------------------------------------------
 CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
 --------------------------------------------------------------------------
-  P1    new  6 : 1  old   new ahead
+  P1    new  4 : 3  old   new ahead
   P2    new  7 : 0  old   new ahead
   P3    new  6 : 1  old   new ahead
-  P4    new  7 : 0  old   new ahead
-  P5    new  5 : 2  old   new ahead
+  P4    new  6 : 1  old   new ahead
+  P5    new  6 : 1  old   new ahead
 
   pairs where new leads: 5 of 5
 
 --------------------------------------------------------------------------
 CLAUSE 2 - pooled preference (need >= 65%% AND exact binomial p < .05)
 --------------------------------------------------------------------------
-  new preferred in 31 of 35 paired votes = 88.6%
-  exact binomial vs 50%:  two-sided p = 0.0000   one-sided p = 0.0000
+  new preferred in 29 of 35 paired votes = 82.9%
+  exact binomial vs 50%:  two-sided p = 0.0001   one-sided p = 0.0001
   the locked criterion reads two-sided; at n=35 both clauses hold from 24 wins up
 
 --------------------------------------------------------------------------
 CLAUSE 3 - mean 'overall' score (need new - old >= 0.50)
 --------------------------------------------------------------------------
-  overall   old 2.94   new 3.97   delta +1.03
-  visuals   old 3.46   new 4.00   delta +0.54
-  audio     old 3.29   new 3.94   delta +0.66
-  pacing    old 3.20   new 4.00   delta +0.80
+  overall   old 3.20   new 4.09   delta +0.89
+  voice     old 3.51   new 4.34   delta +0.83
+  on-screen old 3.34   new 4.17   delta +0.83
+  clarity   old 2.74   new 4.00   delta +1.26
 
-  within-rater overall delta: mean +1.03  sd 0.89  n 35
+  within-rater overall delta: mean +0.89  sd 1.21  n 35
   within-rater is the number that matters - each rater is their own control
 
 --------------------------------------------------------------------------
 DIAGNOSTICS (context, not part of the criterion)
 --------------------------------------------------------------------------
-  position effect     first-shown video won 20 of 35 (57%) - near 50% means order is not driving the result
-  old speaker flagged 22/35 (63%)   sounded fake 9/35 (26%)   on-screen errors 15/35 (43%)
-  new speaker flagged 6/35 (17%)   sounded fake 2/35 (6%)   on-screen errors 7/35 (20%)
-      'sounded fake' is unprompted - the option only appears after a rater has
-      already said something seemed off, or they used the words themselves
-  old speaker issues:  Mispronounced a word 10,  Hard to make out some words 10,  Odd pauses or rhythm 6,  Flat or monotone 6,  Volume went up and down 5,  Sounded fake 4
-  new speaker issues:  Odd pauses or rhythm 5,  Mispronounced a word 2,  Hard to make out some words 2,  Flat or monotone 2,  Sounded fake 1,  Volume went up and down 1
-  old of the 22 who flagged the speaker, 15 said it distracted from the teaching
-  new of the 6 who flagged the speaker, 2 said it distracted from the teaching
-  preference size:    Slightly better 9,  Clearly better 19,  Much better 7
-  would train a coworker with their pick:  No 1,  Yes, no reservations 16,  Yes, with some reservations 18
-  mean within-pair rater agreement: 89% (50% = coin flip, 100% = unanimous)
+  position effect     first-shown video won 18 of 35 (51%) - near 50% means order is not driving the result
+  old narration rated 1-2 by 2/35 (6%)   described as artificial in their own words 2/35 (6%)
+  new narration rated 1-2 by 0/35 (0%)   described as artificial in their own words 0/35 (0%)
+      the second figure is fully unprompted - nothing in the form mentions AI,
+      synthetic voices or anything like it, so those are words raters chose
+  old on the narration, verbatim:
+        "Very monotone."
+        "It sounded robotic to me."
+  straightlining      0/35 (0%) gave all four ratings identical on BOTH videos
+  preference size:    Slightly better 14,  Clearly better 9,  Much better 12
+  would train a coworker with their pick:  No 4,  Yes, no reservations 17,  Yes, with some reservations 14
+  mean within-pair rater agreement: 83% (50% = coin flip, 100% = unanimous)
 
 ==========================================================================
 PRE-REGISTERED CRITERION
 ==========================================================================
   [PASS]  new ahead in >= 4 of 5 pairs        (5 of 5)
-  [PASS]  pooled pref >= 65% and p < .05      (88.6%, p = 0.0000)
-  [PASS]  overall delta >= +0.50              (+1.03)
+  [PASS]  pooled pref >= 65% and p < .05      (82.9%, p = 0.0001)
+  [PASS]  overall delta >= +0.50              (+0.89)
 --------------------------------------------------------------------------
   VERDICT: VALIDATED - all three clauses must hold
 ==========================================================================
 
 ########################################################################
-# RUN 2   --true-pref 0.50 --seed 3   expected: NOT VALIDATED
+# RUN 2   --true-pref 0.50 --seed 3       expected: NOT VALIDATED
 ########################################################################
 wrote 35 synthetic rows to /tmp/null.csv (true preference for new = 0.50)
 ==========================================================================
@@ -93,10 +91,10 @@ excluded            0
 --------------------------------------------------------------------------
 CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
 --------------------------------------------------------------------------
-  P1    new  2 : 5  old   OLD ahead
-  P2    new  4 : 3  old   new ahead
-  P3    new  3 : 4  old   OLD ahead
-  P4    new  6 : 1  old   new ahead
+  P1    new  3 : 4  old   OLD ahead
+  P2    new  3 : 4  old   OLD ahead
+  P3    new  7 : 0  old   new ahead
+  P4    new  4 : 3  old   new ahead
   P5    new  5 : 2  old   new ahead
 
   pairs where new leads: 3 of 5
@@ -104,46 +102,80 @@ CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
 --------------------------------------------------------------------------
 CLAUSE 2 - pooled preference (need >= 65%% AND exact binomial p < .05)
 --------------------------------------------------------------------------
-  new preferred in 20 of 35 paired votes = 57.1%
-  exact binomial vs 50%:  two-sided p = 0.4996   one-sided p = 0.2498
+  new preferred in 22 of 35 paired votes = 62.9%
+  exact binomial vs 50%:  two-sided p = 0.1755   one-sided p = 0.0877
   the locked criterion reads two-sided; at n=35 both clauses hold from 24 wins up
 
 --------------------------------------------------------------------------
 CLAUSE 3 - mean 'overall' score (need new - old >= 0.50)
 --------------------------------------------------------------------------
-  overall   old 3.29   new 3.00   delta -0.29
-  visuals   old 3.09   new 3.20   delta +0.11
-  audio     old 3.03   new 3.00   delta -0.03
-  pacing    old 2.94   new 2.97   delta +0.03
+  overall   old 3.03   new 3.03   delta +0.00
+  voice     old 3.09   new 3.17   delta +0.09
+  on-screen old 3.14   new 3.17   delta +0.03
+  clarity   old 2.77   new 2.74   delta -0.03
 
-  within-rater overall delta: mean -0.29  sd 0.99  n 35
+  within-rater overall delta: mean +0.00  sd 0.97  n 35
   within-rater is the number that matters - each rater is their own control
 
 --------------------------------------------------------------------------
 DIAGNOSTICS (context, not part of the criterion)
 --------------------------------------------------------------------------
-  position effect     first-shown video won 16 of 35 (46%) - near 50% means order is not driving the result
-  old speaker flagged 25/35 (71%)   sounded fake 9/35 (26%)   on-screen errors 12/35 (34%)
-  new speaker flagged 3/35 (9%)   sounded fake 1/35 (3%)   on-screen errors 8/35 (23%)
-      'sounded fake' is unprompted - the option only appears after a rater has
-      already said something seemed off, or they used the words themselves
-  old speaker issues:  Hard to make out some words 15,  Mispronounced a word 7,  Flat or monotone 7,  Volume went up and down 6,  Odd pauses or rhythm 6,  Sounded fake 4
-  new speaker issues:  Mispronounced a word 2,  Sounded fake 1,  Flat or monotone 1
-  old of the 25 who flagged the speaker, 18 said it distracted from the teaching
-  new of the 3 who flagged the speaker, 3 said it distracted from the teaching
-  preference size:    Barely any difference 12,  Slightly better 23
-  SENSITIVITY: excluding the 12 who saw barely any difference, new wins 15 of 23 (65.2%), p = 0.2100
+  position effect     first-shown video won 17 of 35 (49%) - near 50% means order is not driving the result
+  old narration rated 1-2 by 10/35 (29%)   described as artificial in their own words 2/35 (6%)
+  new narration rated 1-2 by 9/35 (26%)   described as artificial in their own words 3/35 (9%)
+      the second figure is fully unprompted - nothing in the form mentions AI,
+      synthetic voices or anything like it, so those are words raters chose
+  old on the narration, verbatim:
+        "Hard to make out some words."
+        "The pauses were in odd places."
+        "It sounded robotic to me."
+        "Hard to make out some words."
+        "Very monotone."
+        "Hard to make out some words."
+  new on the narration, verbatim:
+        "The pauses were in odd places."
+        "Very monotone."
+        "Very monotone."
+        "The pauses were in odd places."
+        "It sounded robotic to me."
+        "Hard to make out some words."
+  straightlining      0/35 (0%) gave all four ratings identical on BOTH videos
+  preference size:    Barely any difference 13,  Slightly better 22
+  SENSITIVITY: excluding the 13 who saw barely any difference, new wins 15 of 22 (68.2%), p = 0.1338
       a forced choice makes a rater who could not tell them apart still pick
       one; this is the honest check on how much of the margin that is
-  would train a coworker with their pick:  No 7,  Yes, no reservations 16,  Yes, with some reservations 12
+  would train a coworker with their pick:  No 4,  Yes, no reservations 18,  Yes, with some reservations 13
   mean within-pair rater agreement: 69% (50% = coin flip, 100% = unanimous)
 
 ==========================================================================
 PRE-REGISTERED CRITERION
 ==========================================================================
   [FAIL]  new ahead in >= 4 of 5 pairs        (3 of 5)
-  [FAIL]  pooled pref >= 65% and p < .05      (57.1%, p = 0.4996)
-  [FAIL]  overall delta >= +0.50              (-0.29)
+  [FAIL]  pooled pref >= 65% and p < .05      (62.9%, p = 0.1755)
+  [FAIL]  overall delta >= +0.50              (+0.00)
 --------------------------------------------------------------------------
   VERDICT: NOT VALIDATED - all three clauses must hold
 ==========================================================================
+
+########################################################################
+# POWER
+########################################################################
+==============================================================================
+POWER OF CLAUSE 2   (pooled preference >= 65% AND two-sided p < .05)
+==============================================================================
+  n = completions that clear the quality gates, not participants launched.
+
+  n      wins needed    chance clause 2 passes, by true preference
+                           70%      75%      80%      85%
+  ------------------------------------------------------------------------
+  21     16 (76.2%)         36%      57%      77%      92%
+  28     20 (71.4%)         53%      75%      91%      98%
+  35     24 (68.6%)         65%      86%      97%     100%
+  42     28 (66.7%)         74%      92%      99%     100%
+  49     32 (65.3%)         81%      95%     100%     100%
+
+  Read it this way: at 35 completions a genuinely much better pipeline (80%)
+  is detected 97% of the time, but a moderately better one (70%) is missed
+  about a third of the time. If the result comes back NOT VALIDATED with a
+  pooled preference in the 60s, the honest reading is 'underpowered', not
+  'no better' - and the writeup should say so.

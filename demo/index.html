@@ -172,7 +172,8 @@
           <li>Two videos, about 9 minutes each. Plan for roughly 25 minutes altogether.</li>
           <li>Each video runs in <strong>two parts with a short black pause between them</strong>. Keep watching when the screen goes dark — it says "Part 2" and carries on.</li>
           <li>The questions unlock once a video has actually played through. Jumping ahead won't work: the player rewinds you to where you got to.</li>
-          <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. We ask for it afterward, so keep an eye out.</li>
+          <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. There's a box right under the video — type it in as soon as you see it, so you don't have to remember it.</li>
+          <li>After each video there are <strong>four quick questions</strong>. The writing, if you want to do any, is all at the end.</li>
           <li>Your written comments matter most. The ratings tell us <em>that</em> something worked; only your own words tell us <em>why</em>, and that is the part we cannot get any other way.</li>
         </ul>
 
@@ -418,81 +419,48 @@ function vk(slot, i){ return slot + "_" + i; }
 const SCALE5 = ["Poor", "Fair", "Good", "Very good", "Excellent"];
 
 const QS = [
-  /* NO WRITING IN THIS BLOCK. Every per-video question is a click. All free text now
-     lives in the end block, including the per-video comments, which are asked there
-     as `s1_comment` and `s2_comment`.
+  /* FOUR clicks and nothing else. All four share the same anchors so a rater learns
+     the scale once, and there is no typing here at all: the code word is typed under
+     the video while they watch it, and every open question lives in the end block.
 
-     The cost of that, stated so it is not forgotten: a comment written at the end
-     about the first video is recalled through the second one. It is the trade for a
-     per-video block a rater can clear in six clicks, and since those comments are
-     optional it is a reasonable one. */
+     What was removed, and why:
+     - The separate "how was the speaker?" question and its tick-any probe. It
+       overlapped `audio` almost entirely - both asked about the voice - so a rater
+       answered the same thing twice and we bought one dimension of information with
+       two questions. What it uniquely gave us, an unprompted route to "sounds
+       artificial", now comes from the conditional box below in the rater's own words
+       rather than off a list we handed them, which is stronger evidence.
+     - "Script" as a fifth scale. Halo is a rater's failure to discriminate between
+       conceptually distinct attributes and it worsens when raters are tired; a lay
+       viewer nine minutes in would have answered script and explanation identically.
 
-  /* FOUR ratings, not five. A fifth item separating "script" from "content"
-        would not have separated: halo is a rater's failure to discriminate between
-        conceptually distinct attributes, it worsens when descriptors are unclear or
-        when raters are tired, and a lay viewer nine minutes in will answer both
-        near-identically. Four dimensions phrased in a rater's language rather than
-        a producer's.
+     Every point is labelled in words rather than shown as a digit with only the ends
+     named: fully labelled scales have higher test-retest reliability, and the gain is
+     largest among respondents with less formal education, which is this panel. The
+     submitted value is still 1-5, so clause 3 of the criterion is unaffected.
 
-        Every point is labelled in words rather than shown as a digit with only the
-        ends named: fully labelled scales have higher test-retest reliability and the
-        gain is largest among respondents with less formal education, which is this
-        panel. The submitted value is still 1-5, so clause 3 is unaffected. */
+     KNOWN TRADE: four scales in a row with identical anchors is the straightlining
+     shape. The code word question used to break the run; ease of use won instead. So
+     rather than design around it invisibly, analysis.py DETECTS it - a row whose four
+     ratings are identical on both videos is flagged. A measured risk beats a hidden
+     one. */
   { id:"overall", t:"scale", q:"Overall, how would you rate this training video?", labels:SCALE5 },
-  { id:"audio",   t:"scale", q:"The voice and how it was delivered", labels:SCALE5 },
+  { id:"audio",   t:"scale", q:"The narration - the voice and how it was delivered", labels:SCALE5 },
 
-  /* 3. The code word sits HERE, mid-block, on purpose. It has to be asked per video
-        anyway as proof of watching, and dropping it between the scales breaks up what
-        would otherwise be four identical rows in a row - the straightlining setup,
-        sitting directly on top of `overall`, which the criterion is computed from.
-        Free protection: no question added, one moved.
-
-        Optional in a preview build only. The code word is burned in 45% into part 2
-        while a preview's gate opens at 5%, and forward seeking is blocked, so a
-        reviewer reaches this having never seen the word and with no way to find it. */
-  { id:"codeword", t:"short", optional: !!CFG.demoBanner,
-    q: CFG.demoBanner
-       ? "What was the code word shown in the second part of the video? (In this preview you probably didn't reach it - leave blank.)"
-       : "What was the code word shown in the second part of the video?" },
+  /* The only conditional here, and only for raters who scored the narration poorly.
+     Optional: someone who gave it a 1 or 2 has already told us the useful part, and
+     this only asks what it was. This is where "it sounded robotic" or "the pauses
+     were odd" now comes from - volunteered rather than picked off a list. */
+  { id:"audio_why", t:"short", optional:true,
+    q:"What was off about the narration?",
+    hint:"Optional - a few words is plenty.",
+    showIf:{ id:"audio", vals:["1","2"] } },
 
   { id:"visuals", t:"scale", q:"The slides and what was on screen", labels:SCALE5 },
-  /* Unipolar, so higher is always better and the mean stays meaningful. This is the
-     dimension closest to what the pipeline actually changed, which is why it earns a
-     slot while "content" does not. */
-  { id:"clarity", t:"scale", q:"How clearly did it explain things?",
-    labels:["Not clearly at all","Not very clearly","Clearly enough","Clearly","Very clearly"] },
-
-  /* 4. The speaker block goes LAST, and nothing follows it, because "Sounded
-        fake" is the one option in this whole form that reveals what the study is
-        testing. Asked this way the question never mentions AI at all: a rater who
-        ticks that unprompted is far stronger evidence than one who agreed with a box
-        we handed them. Three options, one click. */
-  { id:"speaker", t:"choice", q:"Last thing for this video. How was the speaker?",
-    opts:["The speaker did well","The speaker was okay","Something seemed off about the speaker"] },
-
-  /* Conditional probe: only the raters who flagged something ever see this, so
-     it costs most people nothing and yields detail where detail exists.
-     Option order is randomised per render because early options in a tick-any
-     list get selected more often; "Something else" is pinned last and excluded
-     from the shuffle, which is the standard pattern for an other-specify row. */
-  { id:"speaker_issues", t:"multi", q:"What seemed off? Tick anything that applies.",
-    shuffle:true, last:"Something else",
-    opts:["Flat or monotone",
-          "Odd pauses or rhythm",
-          "Mispronounced a word",
-          "Volume went up and down",
-          "Hard to make out some words",
-          "Sounded fake",
-          "Something else"],
-    showIf:{ id:"speaker", vals:["Something seemed off about the speaker"] } },
-  { id:"speaker_other", t:"short", q:"What was it?", optional:true,
-    showIf:{ id:"speaker_issues", vals:["Something else"], contains:true } },
-
-  /* Severity. A monotone voice nobody minds is a different finding from one that
-     costs comprehension, and only this question can tell them apart. */
-  { id:"speaker_distract", t:"choice", q:"Did it distract you from what was being taught?",
-    opts:["No","A little","Yes, a lot"],
-    showIf:{ id:"speaker", vals:["Something seemed off about the speaker"] } }
+  /* "Explained" rather than "content": a rater can judge whether something was
+     explained well, whereas asking about content invites them to rate the subject
+     matter, which is identical across the two versions and not what is being tested. */
+  { id:"clarity", t:"scale", q:"How well did it explain things?", labels:SCALE5 }
 ];
 
 /* The head-to-head stays a FORCED BINARY CHOICE, for two independent reasons.
@@ -773,6 +741,20 @@ function buildVersionScreen(slot){
         : "Please finish watching the video first.";
       e.classList.add("show"); return;
     }
+    /* The code word is not part of QS - it lives outside the locked card - so it is
+       validated and collected here. Required in the study, optional in a preview,
+       where the gate opens long before the word appears. */
+    const cw = $("#cw" + slot);
+    const cwErr = $("#err-cw" + slot);
+    if (!CFG.demoBanner && !cw.value.trim()) {
+      cwErr.textContent = "Please enter the code word shown on screen.";
+      cwErr.classList.add("show");
+      cw.scrollIntoView({ behavior:"smooth", block:"center" });
+      return;
+    }
+    cwErr.classList.remove("show");
+    D["s" + slot + "_codeword"] = cw.value.trim();
+
     const miss = validate(QS, "s" + slot + "_");
     if (miss) { e.textContent = miss; e.classList.add("show"); document.querySelector(`[data-qid="${miss_id}"]`)?.scrollIntoView({ behavior:"smooth", block:"center" }); return; }
     e.classList.remove("show");
@@ -797,8 +779,8 @@ function sec_html(slot, count, many, frames){
        ? `This first set has ${count} videos from the same course. Watch them both, then the questions below unlock. A code word appears on screen during the second one — we ask for it afterwards.`
        : `This second set is ${count} videos from a different version of the course. Same as before: watch both, then the questions unlock. There is a different code word in the second one.`)
     : (first
-       ? "This video comes in two parts with a short black pause between them — keep watching, it hasn't ended. Once it has played through, the questions below unlock. A code word appears on screen in the second part, and we ask for it afterwards."
-       : "Same as before: two parts with a pause between them, then the questions unlock. There's a different code word in this one.");
+       ? "This video comes in two parts with a short black pause between them — keep watching, it hasn't ended. A code word appears on screen during the second part: type it in the box below as soon as you see it. Once the video has played through, four quick questions unlock underneath."
+       : "Same as before: two parts with a pause between them, a code word in the second part, then four quick questions.");
 
   $("#s-v" + slot).innerHTML = `
     <div class="card">
@@ -806,11 +788,25 @@ function sec_html(slot, count, many, frames){
                   : (many ? "Now the second set" : "Now the second video")}</h1>
       <p>${intro}</p>
       ${frames}
+      <!-- Code word box lives HERE, under the video and OUTSIDE the locked question
+           card, so it is usable the moment the word appears on screen. Asking for it
+           after the gate opens made raters hold it in their head for minutes; an
+           honest person then fails on recall, which is a false rejection and the one
+           kind of error this study cannot afford. -->
+      <div class="q" data-qid="cwrap${slot}" style="border-top:1px solid var(--rule-soft);margin-top:22px">
+        <label class="qlabel" for="cw${slot}">Code word${
+          CFG.demoBanner ? ' <span class="small">(optional in this preview)</span>'
+                         : ' <span class="req">*</span>'}</label>
+        <div class="small" style="margin:-6px 0 10px">A word appears on screen part way
+          through the second part. Type it here as soon as you see it.</div>
+        <input type="text" id="cw${slot}" autocomplete="off" spellcheck="false"
+               placeholder="the word you saw on screen">
+        <div class="err" id="err-cw${slot}"></div>
+      </div>
     </div>
     <div class="card locked" id="qs${slot}-card">
-      <h2>Your feedback on ${many ? "those videos" : "that video"}</h2>
-      <p class="small">Answer about ${many ? "the set as a whole, not either video on its own"
-                                          : "the video as a whole, both parts together"}.</p>
+      <h2>Four quick questions</h2>
+      <p class="small">About ${many ? "the set as a whole" : "the video as a whole, both parts together"}.</p>
       <div id="qs${slot}"></div>
       <div style="margin-top:22px">
         <button id="btn-next${slot}">${first ? (many ? "Continue to the second set" : "Continue to the second video")

@@ -60,29 +60,19 @@ METRICS = ("overall", "audio", "visuals", "clarity")
 METRIC_LABEL = {"overall": "overall", "audio": "voice", "visuals": "on-screen",
                 "clarity": "clarity"}
 
-# ---- speaker block --------------------------------------------------------
-# The form no longer asks whether the narration sounded computer-generated. That
-# question named the hypothesis, and anything asked after it was contaminated.
-# Instead a rater says whether the speaker "did well", "was okay", or that
-# "something seemed off", and only the last group is shown a tick-any list of
-# specific problems - one of which is "Sounded fake".
+# ---- narration / reads-as-artificial ---------------------------------------
+# The separate speaker question is gone: it overlapped the narration rating almost
+# entirely, so raters answered the same thing twice. What it uniquely provided - an
+# unprompted route to "sounds artificial" - now comes from two places:
 #
-# So reads-as-AI is now an UNPROMPTED measure: the rater had to volunteer it from
-# a list they only saw after flagging a problem themselves. That is stronger
-# evidence than the old checkbox, and it is why the strings below must stay in
-# step with index.html. If they drift, these diagnostics silently report zero
-# rather than erroring, which is the worst kind of wrong.
-SPEAKER_FLAG = "Something seemed off about the speaker"
-FAKE_OPTION  = "Sounded fake"
+#   1. a LOW narration rating (1 or 2), which triggers an optional "what was off?" box
+#   2. the words raters volunteer, anywhere in their free text
+#
+# That is stronger evidence than the old checkbox, because nobody offered them the
+# idea. Matched on WORD BOUNDARIES, not substrings: "ai" as a substring hits "said",
+# "aid", "waiting" and "explain", which would have quietly inflated this.
+LOW_NARRATION = 2          # 1 or 2 out of 5 counts as flagging the voice
 
-# Unprompted mentions in free text count too, and count for more: nobody offered
-# these words. Checked against the opening comment, the speaker-other box and the
-# head-to-head explanation.
-#
-# Matched on WORD BOUNDARIES, not as substrings. "ai" as a substring hits "said",
-# "aid", "waiting" and "explain"; "machine" is safe but "ai" would have quietly
-# inflated this diagnostic on ordinary sentences. Multi-word phrases are matched
-# literally, single words with \b on both sides.
 FAKE_PATTERNS = [
     r"\brobot(ic|ics)?\b", r"\bai\b", r"\ba\.i\.?\b", r"\bsynthetic\b",
     r"\bmonotone\b", r"\bmachine\b", r"\brobotically\b",
@@ -128,7 +118,7 @@ def mentions_fake(row, slot):
     explanation.
     """
     blob = " ".join(str(field(row, f) or "") for f in (
-        "s%s_comment" % slot, "s%s_speaker_other" % slot, "h2h_why"))
+        "s%s_audio_why" % slot, "s%s_comment" % slot, "h2h_why", "h2h_other"))
     return bool(FAKE_RE.search(blob))
 
 
@@ -277,13 +267,20 @@ def main():
             # `_fake` is the stronger, unprompted signal - either ticking "Sounded
             # fake" from a list they only reached by flagging a problem themselves,
             # or using words like robotic or AI in their own free text.
-            rec["%s_spk_flag" % side] = field(r, "s%s_speaker" % s) == SPEAKER_FLAG
-            issues = ticked(r, "s%s_speaker_issues" % s)
-            rec["%s_issues" % side] = issues
-            rec["%s_fake" % side] = (FAKE_OPTION in issues) or mentions_fake(r, s)
-            rec["%s_distract" % side] = field(r, "s%s_speaker_distract" % s)
+            # Narration flagged = rated 1 or 2 out of 5. `_fake` is the stronger,
+            # fully unprompted signal: words the rater chose themselves.
+            nar = num(field(r, "s%s_audio" % s))
+            rec["%s_nar_flag" % side] = nar is not None and nar <= LOW_NARRATION
+            rec["%s_nar_why" % side] = field(r, "s%s_audio_why" % s)
+            rec["%s_fake" % side] = mentions_fake(r, s)
 
-            rec["%s_err" % side] = (r.get("s%s_errors" % s) or "").startswith("Yes")
+            # Straightlining: all four ratings identical for this video. Four scales in
+            # a row with the same anchors invites answering without reading, and the
+            # code word question that used to break the run has moved under the video.
+            # Detected rather than prevented, so it is at least visible.
+            vals = [num(field(r, "s%s_%s" % (s, m))) for m in METRICS]
+            rec["%s_flat" % side] = (len(set(vals)) == 1 and vals[0] is not None)
+
             rec["%s_slot" % side] = int(s)
         if not ok:
             continue
@@ -358,14 +355,30 @@ def main():
     print("  position effect     first-shown video won %d of %d (%.0f%%) - near 50%% means"
           " order is not driving the result" % (slot1_wins, n, slot1_wins / n * 100))
     for side in ("old", "new"):
-        fl = sum(1 for x in recs if x.get("%s_spk_flag" % side))
+        fl = sum(1 for x in recs if x.get("%s_nar_flag" % side))
         fk = sum(1 for x in recs if x.get("%s_fake" % side))
-        er = sum(1 for x in recs if x.get("%s_err" % side))
-        print("  %-3s speaker flagged %d/%d (%.0f%%)   sounded fake %d/%d (%.0f%%)"
-              "   on-screen errors %d/%d (%.0f%%)"
-              % (side, fl, n, fl / n * 100, fk, n, fk / n * 100, er, n, er / n * 100))
-    print("      'sounded fake' is unprompted - the option only appears after a rater has")
-    print("      already said something seemed off, or they used the words themselves")
+        print("  %-3s narration rated 1-2 by %d/%d (%.0f%%)   described as artificial "
+              "in their own words %d/%d (%.0f%%)"
+              % (side, fl, n, fl / n * 100, fk, n, fk / n * 100))
+    print("      the second figure is fully unprompted - nothing in the form mentions AI,")
+    print("      synthetic voices or anything like it, so those are words raters chose")
+
+    # what raters actually said about a narration they scored poorly
+    for side in ("old", "new"):
+        said = [x["%s_nar_why" % side] for x in recs if x.get("%s_nar_why" % side)]
+        if said:
+            print("  %-3s on the narration, verbatim:" % side)
+            for t in said[:6]:
+                print("        \"%s\"" % str(t)[:88])
+            if len(said) > 6:
+                print("        ... and %d more" % (len(said) - 6))
+
+    flat = sum(1 for x in recs if x.get("old_flat") and x.get("new_flat"))
+    print("  straightlining      %d/%d (%.0f%%) gave all four ratings identical on BOTH"
+          " videos" % (flat, n, flat / n * 100))
+    if flat:
+        print("      that pattern can be honest, but it is also what answering without")
+        print("      reading looks like. Re-run with those rows excluded if it is a big share.")
 
     # What specifically was wrong with the speaker, per side. This is the whole
     # reason the probe exists: not how many disliked the voice, but what about it.

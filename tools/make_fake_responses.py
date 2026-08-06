@@ -21,9 +21,8 @@ def build_headers():
          "participant_id", "pair_id", "cc_code", "video_source", "slot1_key", "slot2_key"]
     for s in ("1", "2"):
         h += ["s%s_%s" % (s, f) for f in
-              ("overall", "visuals", "audio", "clarity", "errors", "errors_detail",
-               "speaker", "speaker_issues", "speaker_other", "speaker_distract",
-               "codeword", "comment", "watched_sec", "duration_sec", "watch_pct",
+              ("overall", "visuals", "audio", "clarity",
+               "audio_why", "codeword", "comment", "watched_sec", "duration_sec", "watch_pct",
                "seek_fwd", "seek_back", "load_errors", "max_rate", "rate_ms", "paste_count")]
     h += ["h2h_choice", "h2h_choice_slot", "h2h_choice_key", "h2h_magnitude", "h2h_why",
           "standby", "h2h_other", "paste_count", "assign_source", "assign_nth", "total_ms",
@@ -107,25 +106,14 @@ def main():
                 for f, off in (("visuals", .1), ("audio", .2), ("clarity", -.1)):
                     r["s%d_%s" % (s, f)] = max(1, min(5, round(random.gauss(base + off, 0.8))))
 
-                # Speaker block. The old side flags problems more often, and only a
-                # flagged row gets the probe fields - exactly as the form behaves,
-                # so analysis.py is exercised on realistically sparse data.
-                # The new side flags less often but not never - if it never did, the
-                # new-side diagnostics would print 0% and we would not know whether
-                # that is the data or a bug in the analysis.
-                spk = random.choice([SPK_GOOD, SPK_GOOD, SPK_GOOD, SPK_OK, SPK_OFF]
-                                    if side == "new"
-                                    else [SPK_OK, SPK_OFF, SPK_OFF])
-                r["s%d_speaker" % s] = spk
-                if spk == SPK_OFF:
-                    picks = random.sample(ISSUES, random.randint(1, 3))
-                    r["s%d_speaker_issues" % s] = "; ".join(picks)
-                    r["s%d_speaker_distract" % s] = random.choice(["No", "A little", "Yes, a lot"])
-                    if random.random() < 0.3:
-                        r["s%d_speaker_other" % s] = "The voice sounded robotic to me."
+                # A low narration score triggers the optional "what was off?" box.
+                # Some of those answers volunteer the words analysis.py scans for, which
+                # is the only route to a reads-as-artificial signal now.
+                if r["s%d_audio" % s] <= 2 and random.random() < 0.6:
+                    r["s%d_audio_why" % s] = random.choice(
+                        ["It sounded robotic to me.", "Very monotone.",
+                         "The pauses were in odd places.", "Hard to make out some words."])
 
-                r["s%d_errors" % s] = random.choice(
-                    ["No, nothing I noticed"] * (4 if side == "new" else 2) + ["Yes, one or two"])
                 r["s%d_codeword" % s] = sides[side][1]
                 r["s%d_comment" % s] = COMMENT
                 dur = 600
