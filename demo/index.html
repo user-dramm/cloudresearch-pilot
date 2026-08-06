@@ -1341,7 +1341,17 @@ function applySaved(o){
     });
     watch[s].open = watch[s].vids.length > 0 && watch[s].vids.every(v => v.open);
     /* Reflect a restored gate in the UI, including unveiling and mounting any later
-       video that had already been reached. */
+       video that had already been reached.
+
+       paintGate FIRST, for every video and not only the finished ones. The restored
+       snapshot carries `watched` and `duration`, so the bar can show a PARTIAL gate
+       immediately. Without this the credit was preserved internally but the label
+       still read 0% until the next playback tick - so someone resuming eight minutes
+       into a nine minute video was told, on screen, that they had watched none of it.
+       The credit was never actually lost, but a rater cannot see internal state: they
+       read 0% and conclude they have to sit through the whole thing again, which is
+       the exact reason resume exists. */
+    watch[s].vids.forEach((v, i) => paintGate(s, i));
     watch[s].vids.forEach((v, i) => {
       if (!v.open) return;
       const g = $("#gate" + vk(s, i)); if (g) g.classList.add("open");

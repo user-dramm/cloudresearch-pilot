@@ -54,8 +54,11 @@ window.STUDY_CONFIG = {
     "video unlocks after about <strong>5%</strong> has played rather than 90%, so " +
     "this takes a couple of minutes instead of 25; the two videos are from " +
     "different courses rather than two versions of one, so “which was better” " +
-    "is meaningless here; and the code-word question is optional, because you will " +
-    "not watch far enough in to see one. Everything else is exactly what a paid " +
+    "is meaningless here; the code-word question is optional, because you will " +
+    "not watch far enough in to see one; and this preview does not save your place, " +
+    "so walk it in one go - the real study does resume if a rater loses power, but " +
+    "saving here would drop the next person who opens this shared link into your " +
+    "half-finished session. Everything else is exactly what a paid " +
     "rater gets — the same videos, the watch gate, the skip-blocking, the black " +
     "“Part 2” pause halfway through each video, and every question. Your " +
     "answers are tagged as a preview and excluded from the analysis automatically.",
