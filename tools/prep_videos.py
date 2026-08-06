@@ -182,6 +182,11 @@ def main():
                          "That is the one error this study would report confidently in "
                          "the wrong direction, so ordering is now impossible to get "
                          "wrong: nothing is implied by position.")
+    ap.add_argument("--side", choices=("old", "new"),
+                    help="process only this side. For when the other side is already "
+                         "encoded and uploaded: re-running it would overwrite finished "
+                         "files for no gain, and the encode is deterministic so the "
+                         "output would be identical anyway.")
     ap.add_argument("--allow-partial", action="store_true",
                     help="process a side that has modules 1 and 3 even when the other "
                          "side is missing. For pairs whose new version is still being "
@@ -233,14 +238,23 @@ def main():
         cdir = os.path.join(src, c)
         found = find_pairs(cdir)
         have = {s: sorted(found[s]) for s in ("old", "new")}
-        complete = {s for s in ("old", "new") if 1 in found[s] and 3 in found[s]}
+        # `available` is what the SOURCE holds; `complete` is what this run will encode.
+        # Keeping them apart matters: a side excluded by --side is finished work being
+        # left alone, not a missing source, and must not be stamped RESERVED in the map.
+        available = {s for s in ("old", "new") if 1 in found[s] and 3 in found[s]}
+        found["_available"] = available
+        complete = set(available)
+        if a.side:
+            complete &= {a.side}
         if len(complete) == 2:
             ready.append((c, found, ["old", "new"]))
-        elif complete and a.allow_partial:
+        elif complete and (a.allow_partial or a.side):
             ready.append((c, found, sorted(complete)))
-            skipped.append("%s: doing the %s side only, %s missing"
-                           % (c, "/".join(sorted(complete)),
-                              "/".join(sorted({"old", "new"} - complete))))
+            other = sorted({"old", "new"} - complete)
+            why = ("excluded by --side, already done" if set(other) <= available
+                   else "source not supplied")
+            skipped.append("%s: doing the %s side only (%s: %s)"
+                           % (c, "/".join(sorted(complete)), "/".join(other), why))
         else:
             skipped.append("%s: old has %s, new has %s - needs modules 1 and 3%s"
                            % (c, have["old"] or "nothing", have["new"] or "nothing",
@@ -267,6 +281,14 @@ def main():
                 word = WORD_POOL[wi % len(WORD_POOL)]
                 wi += 1
             if side not in sides:
+                if side in found.get("_available", set()):
+                    # Present in the source, just not being encoded this run. Finished
+                    # work: leave the map entry exactly as it is. Stamping RESERVED
+                    # here would mark already-encoded, already-uploaded videos as
+                    # pending in the one file that records which side is which.
+                    print("    %-6s key %-10s code word %-10s left alone (--side)"
+                          % (side, key, word))
+                    continue
                 print("    %-6s key %-10s code word %-10s RESERVED - source not supplied yet"
                       % (side, key, word))
                 # Record the reservation in the map too, not just on screen. It used
