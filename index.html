@@ -158,6 +158,12 @@
          reviewer who thinks they are seeing the real study would give feedback on
          the wrong thing. Absent for the real study. -->
     <div id="demo-banner" class="demo-banner hidden"></div>
+    <!-- Shown only when a session was restored. Worth telling them: someone who does
+         not realise their progress came back will start over unnecessarily. -->
+    <div id="resume-note" class="note hidden">
+      <strong>Welcome back.</strong> We picked up where you left off — your answers and
+      how much you had watched are both saved. Carry on from here.
+    </div>
     <div class="rail" id="rail"></div>
 
     <!-- ================= 0. intro ================= -->
@@ -174,6 +180,7 @@
           <li>The questions unlock once a video has actually played through. Jumping ahead won't work: the player rewinds you to where you got to.</li>
           <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. There's a box right under the video — type it in as soon as you see it, so you don't have to remember it.</li>
           <li>After each video there are <strong>four quick questions</strong>. The writing, if you want to do any, is all at the end.</li>
+          <li>Your progress is saved as you go. If your browser closes or you lose power, reopen this same link and you'll carry on from where you stopped — you won't have to rewatch.</li>
           <li>Your written comments matter most. The ratings tell us <em>that</em> something worked; only your own words tell us <em>why</em>, and that is the part we cannot get any other way.</li>
         </ul>
 
@@ -1014,6 +1021,7 @@ setTimeout(() => {
 }, 12000);
 
 let lastTick = Date.now();
+let lastSave = 0;
 setInterval(() => {
   const now = Date.now();
   const wall = (now - lastTick) / 1000;   // real seconds since the last poll
@@ -1085,6 +1093,10 @@ setInterval(() => {
       paintGate(slot, i);
     });
   });
+  /* Save watch progress while it accrues. Saving only on screen change would lose a
+     whole video to a power cut mid-playback, which is the exact case this is for.
+     Every 4 seconds rather than every tick, to keep localStorage writes cheap. */
+  if (now - lastSave > 2500) { lastSave = now; save(); }
 }, 500);
 
 function paintGate(slot, i){
@@ -1121,7 +1133,9 @@ function paintGate(slot, i){
 /* ---------- navigation ---------- */
 const SCREENS = ["#s-intro", "#s-v1", "#s-v2", "#s-h2h", "#s-done"];
 $("#rail").innerHTML = SCREENS.map(() => "<div></div>").join("");
+let atScreen = 0;
 function go(i){
+  atScreen = i;
   SCREENS.forEach((s, n) => $(s).classList.toggle("hidden", n !== i));
   $("#s-fallback").classList.add("hidden");
   [...$("#rail").children].forEach((d, n) => {
@@ -1132,9 +1146,164 @@ function go(i){
   save();
 }
 
-/* ---------- local backup so a refresh never loses typed work ---------- */
+/* ---------- RESUME ----------------------------------------------------------
+   A rater who closes the tab, loses power, or reloads by accident at minute 18
+   should not lose 18 minutes. They will abandon instead, which costs the slot and
+   earns a bad review even though nothing was paid.
+
+   This used to be write-only: state was saved on every screen change and NEVER read
+   back, under a comment claiming a refresh could not lose typed work. It could, and
+   did. Now it is a real resume.
+
+   Three things have to survive, not just the answers:
+
+     answers    - or they retype everything
+     WATCH TIME - or the gate resets and they must rewatch nine minutes, which is the
+                  part that actually makes people quit
+     elapsed    - because analysis.py rejects a session shorter than 85% of the video
+                  it served, and total_ms is measured from page load. Without carrying
+                  elapsed time across a reload, resuming would produce a short session
+                  and the gate would reject an honest rater for having recovered.
+
+   Tampering is possible - localStorage is editable, so someone could grant themselves
+   watch credit. Accepted knowingly: the alternative is losing honest people to a
+   flaky connection, which is far more likely at this sample size. The backstops still
+   apply, since a faked row still has to produce a plausible session length, a code
+   word from a moment it claims to have watched, and a max playback rate at 1x.
+   --------------------------------------------------------------------------- */
 const LSK = "embr_pilot_" + CFG.studyTag + "_" + (PID || "anon");
-function save(){ try { localStorage.setItem(LSK, JSON.stringify(D)); } catch(e){} }
+let priorMs = 0;                       /* elapsed time carried over from earlier visits */
+
+/* Nothing may be written until resume has had its chance to read.
+
+   Without this the periodic save RACES the resume and destroys it: the polling loop
+   starts saving four seconds after page load, while boot has to await assign() first
+   - a network call, with up to three retries against an endpoint that fails about a
+   quarter of the time. So on a slow assign the fresh, empty state overwrote the saved
+   one before resume ever looked at it, and a returning rater silently lost everything.
+   Found by closing a page mid-video and reopening it, which is the only way this
+   shows up. */
+let saveArmed = false;
+
+/* Snapshot whatever is on screen RIGHT NOW into D, without validating it.
+
+   collect() only runs when a rater presses Continue, so until then their answers live
+   only in the DOM - and a crash before that button loses everything they had filled
+   in. This copies the current state on every save instead, so a power cut costs at
+   most the last few seconds. Partial or empty answers are harmless: validate() still
+   gates the Continue button, and collect() overwrites these on the way past. */
+function snapshotLive(){
+  try {
+    [1, 2].forEach(slot => {
+      const card = $("#qs" + slot);
+      if (!card) return;
+      QS.forEach(sp => {
+        const q = document.querySelector('[data-qid="s' + slot + "_" + sp.id + '"]');
+        if (!q || q.classList.contains("hidden")) return;
+        if (sp.t === "multi") {
+          const v = [...q.querySelectorAll("input:checked")].map(i => i.value).join("; ");
+          if (v) D["s" + slot + "_" + sp.id] = v;
+        } else {
+          const el = q.querySelector("input:checked") || q.querySelector("textarea,input[type=text]");
+          if (el && el.value) D["s" + slot + "_" + sp.id] = el.value.trim();
+        }
+      });
+      const cw = $("#cw" + slot);
+      if (cw && cw.value.trim()) D["s" + slot + "_codeword"] = cw.value.trim();
+    });
+    H2H.forEach(sp => {
+      const q = document.querySelector('[data-qid="' + sp.id + '"]');
+      if (!q || q.classList.contains("hidden")) return;
+      const el = q.querySelector("input:checked") || q.querySelector("textarea,input[type=text]");
+      if (el && el.value) D[sp.id] = el.value.trim();
+    });
+  } catch (e) {}
+}
+
+function save(){
+  if (!saveArmed) return;
+  snapshotLive();
+  try {
+    localStorage.setItem(LSK, JSON.stringify({
+      v: 2,
+      pair: PAIR ? PAIR.id : null,
+      d: D,
+      /* only the fields that must survive - not `last`, which is a live cursor */
+      w: [1, 2].map(s => watch[s].vids.map(v => ({
+        watched: v.watched, duration: v.duration, open: v.open,
+        seekFwd: v.seekFwd, seekBack: v.seekBack, maxRate: v.maxRate, errors: v.errors
+      }))),
+      el: priorMs + (Date.now() - t0),
+      sc: atScreen
+    }));
+  } catch (e) {}
+}
+
+function loadSaved(){
+  try {
+    const raw = localStorage.getItem(LSK);
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    /* Only resume into the SAME pair. If assignment handed them a different one - it
+       should not, but a fallback path could - their old answers describe other videos
+       and merging them would silently mislabel the row. */
+    if (!o || o.v !== 2 || !o.pair || !PAIR || o.pair !== PAIR.id) return null;
+    return o;
+  } catch (e) { return null; }
+}
+
+/* Put typed and clicked answers back on screen, so validate() sees them and the rater
+   sees their own work rather than a blank form. */
+function restoreUI(specs, prefix){
+  specs.forEach(sp => {
+    const val = D[prefix + sp.id];
+    if (val === undefined || val === "") return;
+    const q = document.querySelector('[data-qid="' + prefix + sp.id + '"]');
+    if (!q) return;
+    if (sp.t === "multi") {
+      const want = String(val).split("; ");
+      q.querySelectorAll("label").forEach(l => {
+        const on = want.includes(l.dataset.v);
+        l.classList.toggle("sel", on);
+        const box = l.querySelector("input"); if (box) box.checked = on;
+      });
+    } else if (sp.t === "scale" || sp.t === "choice") {
+      const l = [...q.querySelectorAll("label")].find(x => x.dataset.v === String(val));
+      if (l) { l.classList.add("sel"); const i = l.querySelector("input"); if (i) i.checked = true; }
+    } else {
+      const el = q.querySelector("textarea,input");
+      if (el) { el.value = val; el.dispatchEvent(new Event("input")); }
+    }
+  });
+}
+
+function applySaved(o){
+  Object.assign(D, o.d || {});
+  priorMs = o.el || 0;
+  [1, 2].forEach(s => {
+    (o.w && o.w[s - 1] || []).forEach((v, i) => {
+      if (!watch[s].vids[i]) return;
+      Object.assign(watch[s].vids[i], v);
+    });
+    watch[s].open = watch[s].vids.length > 0 && watch[s].vids.every(v => v.open);
+    /* Reflect a restored gate in the UI, including unveiling and mounting any later
+       video that had already been reached. */
+    watch[s].vids.forEach((v, i) => {
+      if (!v.open) return;
+      const g = $("#gate" + vk(s, i)); if (g) g.classList.add("open");
+      const bar = $("#gate-bar" + vk(s, i)); if (bar) bar.style.width = "100%";
+      const pct = $("#gate-pct" + vk(s, i)); if (pct) pct.textContent = "100%";
+      const nxt = $("#vwrap" + vk(s, i + 1));
+      if (nxt) { nxt.classList.remove("veiled"); const vl = $("#veil" + vk(s, i + 1)); if (vl) vl.remove(); }
+    });
+    if (watch[s].open) $("#qs" + s + "-card").classList.remove("locked");
+    const cw = $("#cw" + s);
+    if (cw && D["s" + s + "_codeword"]) cw.value = D["s" + s + "_codeword"];
+    restoreUI(QS, "s" + s + "_");
+  });
+  restoreUI(H2H, "");
+  return Math.min(o.sc || 0, 3);        /* never resume onto the done screen */
+}
 
 /* ---------- submit ---------- */
 function payload(){
@@ -1165,7 +1334,9 @@ function payload(){
   D.h2h_choice_slot = D.h2h_choice === "The first video" ? 1 : 2;
   D.h2h_choice_key  = SLOTS[D.h2h_choice_slot - 1].key;
   D.video_source = CFG.videoSource;
-  D.total_ms = Date.now() - t0;
+  /* Includes time from earlier visits, or a resumed session looks impossibly
+     short and analysis.py rejects an honest rater for having recovered. */
+  D.total_ms = priorMs + (Date.now() - t0);
   D.token = CFG.formToken;
   return D;
 }
@@ -1253,6 +1424,21 @@ $("#btn-retry").addEventListener("click", async () => {
   buildVersionScreen(1); buildVersionScreen(2);
   H2H.forEach(s => renderQ(s, "", $("#h2h-qs")));
   $("#btn-start").addEventListener("click", () => go(1));
+
+  /* Resume, if this browser has unfinished work for this pair. Screens are rebuilt
+     first so there is something to restore into. */
+  const saved = loadSaved();
+  if (saved) {
+    const at = applySaved(saved);
+    if (at > 0) {
+      const n = $("#resume-note");
+      if (n) n.classList.remove("hidden");
+      saveArmed = true;            /* only now is it safe to overwrite */
+      go(at);
+      return;
+    }
+  }
+  saveArmed = true;
   go(0);
 })();
 </script>
