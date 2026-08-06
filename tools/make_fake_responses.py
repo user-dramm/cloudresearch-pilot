@@ -84,9 +84,9 @@ def main():
                 "form_version": "1.0.0", "is_selftest": "no",
                 "participant_id": "CR%05d" % i, "pair_id": pair, "cc_code": "EMBR-CC-XXXXX",
                 "slot1_key": sides[slot[1]][0], "slot2_key": sides[slot[2]][0],
-                # Must match the h2h_choice options in index.html: each side is a
-                # SET of two videos (one version), not a single video.
-                "h2h_choice": "The first set" if (slot[1] == "new") == prefers_new else "The second set",
+                # Must match the h2h_choice options in index.html. Each side is one
+                # video in two parts - one version of the course.
+                "h2h_choice": "The first video" if (slot[1] == "new") == prefers_new else "The second video",
                 "h2h_choice_slot": 1 if (slot[1] == "new") == prefers_new else 2,
                 "h2h_choice_key": sides["new" if prefers_new else "old"][0],
                 "h2h_why": "The second one held my attention better and the audio was cleaner.",

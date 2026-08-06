@@ -96,6 +96,59 @@ def duration(ffmpeg, path):
     return int(h) * 3600 + int(mi) * 60 + float(s)
 
 
+GAP_SEC = 2.5          # black separator between the two modules
+GAP_TEXT = "Part 2"    # shown on the black, so nobody thinks the video ended
+GAP_PT = 72            # large: this label's only job is to stop someone stopping
+
+
+def join_encode(ffmpeg, m1, m3, dst, word, at, fontfile=None,
+                crf=20, preset="veryfast", w=1920, h=1080, fps=30):
+    """One video per side: module 1, a black pause, then module 3.
+
+    Halves the uploads and means a section needs only one player. The black gap
+    carries a short label because a silent black screen mid-video reads as "it
+    ended", and a rater who stops there fails the watch gate through no fault of
+    their own.
+
+    Everything goes through the same scale/pad/fps/audio normalisation as the
+    single-clip path, so joining cannot introduce a difference between the two
+    sides - and the gap is generated identically for both.
+    """
+    norm = ("scale=%d:%d:force_original_aspect_ratio=decrease,"
+            "pad=%d:%d:-1:-1:color=black,setsar=1,fps=%d" % (w, h, w, h, fps))
+    font = ("fontfile='%s':" % fontfile) if fontfile else ""
+    safe = word.replace("\\", "\\\\").replace(":", r"\:").replace("'", r"\'")
+
+    fc = (
+        "[0:v]%s[v0];[1:v]%s[v1];"
+        # %d for the gap font size rather than string concatenation: `%` binds tighter
+        # than `+`, so a "..." + str(x) + "..." % args expression applies args to only
+        # the trailing fragment and raises a format error.
+        "[2:v]%s,drawtext=%stext='%s':fontcolor=white:fontsize=%d"
+        ":x=(w-text_w)/2:y=(h-text_h)/2[vg];"
+        "[0:a]aresample=48000,aformat=channel_layouts=stereo[a0];"
+        "[1:a]aresample=48000,aformat=channel_layouts=stereo[a1];"
+        "[3:a]aresample=48000,aformat=channel_layouts=stereo[ag];"
+        "[v0][a0][vg][ag][v1][a1]concat=n=3:v=1:a=1[vc][ac];"
+        "[vc]drawtext=%stext='Code word\\: %s'"
+        ":fontcolor=white:fontsize=%d:box=1:boxcolor=black@0.72:boxborderw=%d"
+        ":x=(w-text_w)/2:y=%d:enable='between(t,%.2f,%.2f)'[v]"
+        % (norm, norm, norm, font, GAP_TEXT, GAP_PT, font, safe,
+           OVERLAY_PT, OVERLAY_PAD, OVERLAY_Y, at, at + 5)
+    )
+    cmd = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
+           "-i", m1, "-i", m3,
+           "-f", "lavfi", "-t", str(GAP_SEC), "-i",
+           "color=c=black:s=%dx%d:r=%d" % (w, h, fps),
+           "-f", "lavfi", "-t", str(GAP_SEC), "-i",
+           "anullsrc=r=48000:cl=stereo",
+           "-filter_complex", fc, "-map", "[v]", "-map", "[ac]",
+           "-c:v", "libx264", "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p",
+           "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
+           "-movflags", "+faststart", dst]
+    subprocess.run(cmd, check=True)
+
+
 def encode(ffmpeg, src, dst, word=None, at=None, fontfile=None,
            crf=20, preset="veryfast", w=1920, h=1080, fps=30):
     """Identical settings for every clip. `word` draws the code word if given."""
@@ -182,6 +235,12 @@ def main():
                          "That is the one error this study would report confidently in "
                          "the wrong direction, so ordering is now impossible to get "
                          "wrong: nothing is implied by position.")
+    ap.add_argument("--join", action="store_true",
+                    help="produce ONE video per side - module 1, a black pause, then "
+                         "module 3 - instead of two separate files. Halves the uploads "
+                         "and means each section needs only one player. The code word "
+                         "lands 45%% into the module-3 portion, so it still proves the "
+                         "rater was watching late in the set rather than at the join.")
     ap.add_argument("--side", choices=("old", "new"),
                     help="process only this side. For when the other side is already "
                          "encoded and uploaded: re-running it would overwrite finished "
@@ -301,15 +360,52 @@ def main():
                      "status": "RESERVED - source not supplied yet"})
                 continue
             m1, m3 = found[side][1], found[side][3]
+            d1 = duration(a.ffmpeg, m1) or 0
             d3 = duration(a.ffmpeg, m3) or 0
-            at = round(d3 * 0.45, 2)
-
-            # Output names are for the human sorting a folder: module number, padded
-            # course code, the opaque key, and -cw where a code word was burned in.
-            # The KEY has to be in there because both sides hold a module 3 of the
-            # same course, so course+module alone is ambiguous - and the key is what
-            # distinguishes them without the filename ever saying old or new.
             code = c.zfill(5)
+
+            if a.join:
+                # One file per side. The code word goes 45% into the MODULE 3 portion,
+                # not 45% of the joined runtime - 45% of the whole thing lands near the
+                # junction, and the point of the code word is to prove someone was
+                # still watching late in the set.
+                at = round(d1 + GAP_SEC + d3 * 0.45, 2)
+                total_dur = d1 + GAP_SEC + d3
+                name = "%s-%s-cw.mp4" % (code, key)
+                print("    %-6s key %-10s code word %-10s at %.0fs of %.0fs "
+                      "(%.0f%% in, inside part 2)"
+                      % (side, key, word, at, total_dur, at / total_dur * 100))
+                print("           %-26s <- %s" % (name, os.path.basename(m1)))
+                print("           %-26s +  %s" % ("", os.path.basename(m3)))
+
+                mapping[key] = {"version": side, "pair_folder": c, "codeword": word,
+                                "video1": os.path.basename(m1),
+                                "video2": os.path.basename(m3),
+                                "joined": True,
+                                "out_joined": name,
+                                "youtube_title": key,
+                                "part1_sec": round(d1, 1), "gap_sec": GAP_SEC,
+                                "part2_sec": round(d3, 1),
+                                "total_sec": round(total_dur, 1),
+                                "codeword_at_sec": at}
+                if a.dry_run:
+                    continue
+                dst = os.path.join(out, name)
+                join_encode(a.ffmpeg, m1, m3, dst, word, at, fontfile=a.fontfile)
+                got = duration(a.ffmpeg, dst) or 0
+                print("           -> %-26s %.0f MB  %.0fs (expected %.0fs)"
+                      % (name, os.path.getsize(dst) / 1e6, got, total_dur))
+                if abs(got - total_dur) > 2.0:
+                    print("           *** length is off by %.0fs - the concat lost or "
+                          "duplicated something" % abs(got - total_dur))
+                continue
+
+            # Two files per side. Output names are for the human sorting a folder:
+            # module number, padded course code, the opaque key, and -cw where a code
+            # word was burned in. The KEY has to be in there because both sides hold a
+            # module 3 of the same course, so course+module alone is ambiguous - and
+            # the key distinguishes them without the filename saying old or new.
+            at = round(d3 * 0.45, 2)
             n1 = "1-%s-%s.mp4" % (code, key)
             n2 = "3-%s-%s-cw.mp4" % (code, key)
 

@@ -169,11 +169,10 @@
 
         <h2>What to expect</h2>
         <ul>
-          <li>Four videos in total, about 4 to 5 minutes each, in two sets of two. Plan for roughly 25 minutes altogether.</li>
-          <li>The two videos in a set come from the same course, so watch both before answering — the questions ask about the set, not about one video.</li>
-          <li>The questions unlock once a video has actually played through, so please watch rather than skip ahead. Fast-forwarding doesn't count toward the unlock.</li>
-          <li>Partway through the <strong>second video of each set</strong> a short <strong>code word</strong> appears on screen. We ask for it afterward, so keep an eye out.</li>
-          <li>Please leave <strong>subtitles / CC turned off</strong> in the player. We've switched them off for you, but if you see a second set of captions appear, click the <strong>CC</strong> button to hide them — some of these videos already have their own text on screen, and two layers at once makes them hard to read.</li>
+          <li>Two videos, about 9 minutes each. Plan for roughly 25 minutes altogether.</li>
+          <li>Each video runs in <strong>two parts with a short black pause between them</strong>. Keep watching when the screen goes dark — it says "Part 2" and carries on.</li>
+          <li>The questions unlock once a video has actually played through. Jumping ahead won't work: the player rewinds you to where you got to.</li>
+          <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. We ask for it afterward, so keep an eye out.</li>
           <li>Your written comments matter most. The ratings tell us <em>that</em> something worked; only your own words tell us <em>why</em>, and that is the part we cannot get any other way.</li>
         </ul>
 
@@ -465,8 +464,8 @@ const QS = [
      with no way to go and find it. Required, it would be a wall nobody could pass. */
   { id:"codeword", t:"short", optional: !!CFG.demoBanner,
     q: CFG.demoBanner
-       ? "What was the code word shown during the second video? (In this preview you probably didn't reach it - leave blank.)"
-       : "What was the code word shown during the second video?" },
+       ? "What was the code word shown in the second part of the video? (In this preview you probably didn't reach it - leave blank.)"
+       : "What was the code word shown in the second part of the video?" },
 
   /* 4. The speaker block goes LAST, and nothing follows it, because "Sounded
         fake" is the one option in this whole form that reveals what the study is
@@ -520,11 +519,13 @@ const QS = [
    who had to guess says "barely any difference", and analysis.py can re-run
    without those rows as a sensitivity check. */
 const H2H = [
-  /* "Set", not "video": each side is two videos from one version of the course, so
-     asking which VIDEO was better would be ambiguous - there were four. The stored
-     values must stay in step with the h2h_choice test in payload(). */
-  { id:"h2h_choice", t:"choice", q:"Taking each set as a whole, which was better?",
-    opts:["The first set","The second set"] },
+  /* "Set" was the right word when each side was served as two separate files; now
+     each side is ONE video in two parts, so "video" is what a rater actually saw.
+     The stored strings must stay in step with the h2h_choice test in payload(), with
+     make_fake_responses.py, and with anything that reads h2h_choice as text - the
+     analysis itself keys off h2h_choice_key, not this string. */
+  { id:"h2h_choice", t:"choice", q:"Taking each video as a whole, which was better?",
+    opts:["The first video","The second video"] },
 
   /* Magnitude, not confidence. The old question asked how SURE they were, which
      measures certainty about their own judgement. This asks how BIG the gap was,
@@ -716,7 +717,7 @@ function buildVersionScreen(slot){
   const frames = vids.map((_, i) => `
     <div id="vwrap${vk(slot, i)}" class="${i === 0 ? "" : "veiled"}">
       ${i === 0 ? "" : '<div style="height:26px"></div>'}
-      <p class="eyebrow">Video ${i + 1} of ${vids.length}</p>
+      ${vids.length > 1 ? `<p class="eyebrow">Video ${i + 1} of ${vids.length}</p>` : ""}
       <div class="frame">
         <div id="yt${vk(slot, i)}"></div>
         ${i === 0 ? "" : `<div class="veil" id="veil${vk(slot, i)}">
@@ -762,26 +763,34 @@ function buildVersionScreen(slot){
    edited without touching the player logic. */
 function sec_html(slot, count, many, frames){
   const first = slot === 1;
+  /* Each side is normally ONE video that runs module 1, a short black pause marked
+     "Part 2", then module 3. The rater is told about the pause so it does not read
+     as the video ending - that is the moment someone would otherwise stop early and
+     fail the gate through no fault of their own.
+     The `many` branch survives for the case of a section served as separate files. */
   const intro = many
     ? (first
        ? `This first set has ${count} videos from the same course. Watch them both, then the questions below unlock. A code word appears on screen during the second one — we ask for it afterwards.`
        : `This second set is ${count} videos from a different version of the course. Same as before: watch both, then the questions unlock. There is a different code word in the second one.`)
     : (first
-       ? "Watch it through, then the questions below will unlock. Remember the code word on screen."
-       : "Same as before — watch it through, then the questions unlock. There's a different code word in this one.");
+       ? "This video comes in two parts with a short black pause between them — keep watching, it hasn't ended. Once it has played through, the questions below unlock. A code word appears on screen in the second part, and we ask for it afterwards."
+       : "Same as before: two parts with a pause between them, then the questions unlock. There's a different code word in this one.");
 
   $("#s-v" + slot).innerHTML = `
     <div class="card">
-      <h1>${first ? "Watch the first set of videos" : "Now the second set"}</h1>
+      <h1>${first ? (many ? "Watch the first set of videos" : "Watch the first video")
+                  : (many ? "Now the second set" : "Now the second video")}</h1>
       <p>${intro}</p>
       ${frames}
     </div>
     <div class="card locked" id="qs${slot}-card">
       <h2>Your feedback on ${many ? "those videos" : "that video"}</h2>
-      <p class="small">Answer about ${many ? "the set as a whole, not either video on its own" : "the video you just watched"}.</p>
+      <p class="small">Answer about ${many ? "the set as a whole, not either video on its own"
+                                          : "the video as a whole, both parts together"}.</p>
       <div id="qs${slot}"></div>
       <div style="margin-top:22px">
-        <button id="btn-next${slot}">${first ? "Continue to the second set" : "Continue to the last questions"}</button>
+        <button id="btn-next${slot}">${first ? (many ? "Continue to the second set" : "Continue to the second video")
+                                            : "Continue to the last questions"}</button>
       </div>
       <div class="err" id="err-v${slot}"></div>
     </div>`;
@@ -1131,9 +1140,9 @@ function payload(){
        was meant to serve rather than assumed. */
     D["s" + s + "_video_count"]  = vids.length;
   });
-  /* "The first set" / "The second set" name the two SECTIONS, not individual module
-     videos - each section is one version of the course. */
-  D.h2h_choice_slot = D.h2h_choice === "The first set" ? 1 : 2;
+  /* Must match the h2h_choice option strings exactly. "The first video" names the
+     first SECTION - one version of the course, played as one video in two parts. */
+  D.h2h_choice_slot = D.h2h_choice === "The first video" ? 1 : 2;
   D.h2h_choice_key  = SLOTS[D.h2h_choice_slot - 1].key;
   D.video_source = CFG.videoSource;
   D.total_ms = Date.now() - t0;

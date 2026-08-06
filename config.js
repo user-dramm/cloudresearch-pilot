@@ -58,12 +58,12 @@ window.STUDY_CONFIG = {
        opaque labels you invent; do not name them old/new. Record the true
        mapping in decode_key.json.
 
-     Each version is shown to the rater as a SECTION of two videos - module 1
-     then module 3 - watched back to back before any question is asked, because
-     what the study compares is the VERSION, not a single module. So each version
-     carries a LIST, in the order they should be watched:
+     Each version is ONE video: module 1, a 2.5s black pause labelled "Part 2",
+     then module 3. Joined rather than served as two files so a section needs only
+     one player and there are 10 uploads instead of 20. The list form is kept in
+     case a section ever needs more than one file again:
 
-       yts:  [ "moduleOneId", "moduleThreeId" ]        [youtube mode]
+       yts:  [ "oneJoinedVideoId" ]                    [youtube mode]
        srcs: [ "https://.../m1.mp4", ".../m3.mp4" ]    [file mode]
 
      Only the list matching videoSource has to be filled in. A single `yt` or
@@ -79,17 +79,17 @@ window.STUDY_CONFIG = {
     {
       id: "P1", cc: "EMBR-CC-00051", enabled: false,
       versions: [
-        { key: "k3ta", yts: ["", ""], srcs: ["", ""] },
-        { key: "k9vm", yts: ["", "rN57sPKZ7TY"], srcs: ["", ""] }
+        { key: "k3ta", yts: [""], srcs: ["", ""] },
+        { key: "k9vm", yts: [""], srcs: ["", ""] }
       ]
     },
     {
       id: "P2", cc: "EMBR-CC-00158", enabled: true,
       versions: [
-        { key: "k5qd", yts: ["", "SvFQ7bhfZ2s"],
+        { key: "k5qd", yts: [""],
                        srcs: ["https://clips.example.com/k5qd_m1.mp4",
                               "https://clips.example.com/k5qd_m3.mp4"] },
-        { key: "k2wj", yts: ["elN8cuwcDSE", "dlRP9lEVEgY"],
+        { key: "k2wj", yts: [""],
                        srcs: ["https://clips.example.com/k2wj_m1.mp4",
                               "https://clips.example.com/k2wj_m3.mp4"] }
       ]
@@ -97,10 +97,10 @@ window.STUDY_CONFIG = {
     {
       id: "P3", cc: "EMBR-CC-00162", enabled: true,
       versions: [
-        { key: "k8rn", yts: ["qHwWmi8mugA", "zDVyC079umo"],
+        { key: "k8rn", yts: [""],
                        srcs: ["https://clips.example.com/k8rn_m1.mp4",
                               "https://clips.example.com/k8rn_m3.mp4"] },
-        { key: "k4zf", yts: ["", ""],
+        { key: "k4zf", yts: [""],
                        srcs: ["https://clips.example.com/k4zf_m1.mp4",
                               "https://clips.example.com/k4zf_m3.mp4"] }
       ]
@@ -113,17 +113,17 @@ window.STUDY_CONFIG = {
     {
       id: "P4", cc: "EMBR-CC-00176", enabled: false,
       versions: [
-        { key: "k6hb", yts: ["", ""], srcs: ["", ""] },
-        { key: "k1ps", yts: ["GSbn6YHm6e8", ""], srcs: ["", ""] }
+        { key: "k6hb", yts: [""], srcs: ["", ""] },
+        { key: "k1ps", yts: [""], srcs: ["", ""] }
       ]
     },
     {
       id: "P5", cc: "EMBR-CC-00254", enabled: true,
       versions: [
-        { key: "k7cy", yts: ["Lr5SbW449UU", "3MyzUxYZVTE"],
+        { key: "k7cy", yts: [""],
                        srcs: ["https://clips.example.com/k7cy_m1.mp4",
                               "https://clips.example.com/k7cy_m3.mp4"] },
-        { key: "k0lg", yts: ["YeiqjBNu9rY", ""],
+        { key: "k0lg", yts: [""],
                        srcs: ["https://clips.example.com/k0lg_m1.mp4",
                               "https://clips.example.com/k0lg_m3.mp4"] }
       ]
