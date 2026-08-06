@@ -366,7 +366,41 @@ Two related things checked and deliberately left alone:
   returning rater another pair, their saved answers describe other videos, and merging
   them would mislabel the row. The guard is right and stays.
 
-One bug this turned up, now fixed: `applySaved()` repainted the gate bar only for videos
+### Resume used to be intermittent, and silently so
+
+The worse bug testing found. Saved state is only merged back if the assigned pair still
+matches (`loadSaved()`), and the pair was re-derived from scratch on every visit. The
+endpoint hands out whichever pair has the fewest raters; the offline fallback picks
+`hash(pid) % live.length`. **Those two disagree in general.** So a rater whose first
+visit reached the endpoint but whose return visit hit its roughly 1-in-4 failure rate got
+a *different* pair, the guard correctly refused to merge answers describing other videos,
+and they lost the session - resume failing precisely when the network is bad enough to
+need it. Seen live: two runs of the same test, one resumed, one did not.
+
+Worse, `nth` was not saved either, and the A/B order is `nth % 2`. A fallback on the
+return visit could therefore seat the two versions **the other way round**, and the
+restored section-1 answers would then describe the other video. That mislabels a row
+rather than losing it, which is far worse: the study would report a preference in the
+wrong direction and look perfectly valid doing it.
+
+Both fixed. `assign()` now checks for a saved session *before* asking the endpoint
+anything, and honours its pair and its `nth`: a returning rater's pair is already decided
+because they have watched those videos. Nothing is asked of the endpoint on that path -
+the assignments row already exists, so there is no slot to claim. Proved with the
+endpoint **completely dead** (every request to it aborted):
+
+```
+VISIT 1 (endpoint healthy)   pair=P4  order=k1ps>k6hb  nth=1  watched=40s  label=8%
+  >>> power cut
+VISIT 2 (endpoint DEAD)      pair=P4  order=k1ps>k6hb  nth=1  watched=39s  label=8%
+  same pair YES   same A/B order YES   credit carried YES   shown on screen YES
+```
+
+A resumed row is identifiable by `resumed_from_save` in the `extra_json` column.
+`assign_source` deliberately still reports how the pair was *originally* chosen, because
+`applySaved()` restores the whole of `D`; that is the field balance is audited from.
+
+One further bug, now fixed: `applySaved()` repainted the gate bar only for videos
 that had fully cleared it, so someone resuming part-way through saw **0%** even though
 their credit was intact - the snapshot held `{"watched":44.18,"duration":546}` and came
 back as 44s in memory. The credit was never lost, but a rater cannot read memory. They

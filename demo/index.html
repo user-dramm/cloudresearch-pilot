@@ -318,6 +318,19 @@ let PAIR = null, SLOTS = [];
 
 function hash(s){ let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
 
+/* loadSaved() cannot run until PAIR exists, because it validates against it - but the
+   pair is exactly what we need to know BEFORE assigning. So this reads the bare minimum
+   out of the same record, with no validation beyond the format version. */
+function peekSaved(){
+  try {
+    /* LSK is declared further down but only ever read at runtime, by which point it
+       exists. Reusing it rather than rebuilding the string keeps one definition of the
+       key - two copies would drift the moment the format changed. */
+    const o = JSON.parse(localStorage.getItem(LSK) || "null");
+    return (o && o.v === 3 && o.pair) ? o : null;
+  } catch (e) { return null; }
+}
+
 function setPair(pair, nth, source){
   PAIR = pair;
   SLOTS = nth % 2 === 0 ? [PAIR.versions[0], PAIR.versions[1]]
@@ -352,6 +365,31 @@ async function fetchDeadline(url, opts, ms){
 
 async function assign(){
   if (!live.length) return false;
+
+  /* A RETURNING RATER'S PAIR IS ALREADY DECIDED - they have watched those videos.
+     Honour the saved session before asking the endpoint anything.
+
+     Without this, resume was intermittent, and silently so. The endpoint returns the
+     pair with the fewest raters; assignLocal() picks hash(pid) % live.length. Those
+     two disagree in general, so a rater whose first visit reached the endpoint but
+     whose return visit hit the ~1-in-4 failure got a DIFFERENT pair, loadSaved()
+     correctly refused to merge answers describing other videos, and they silently
+     lost everything - the exact scenario resume exists for, failing precisely when
+     the network is bad enough to need it. Observed live: two runs of the same test,
+     one resumed and one did not.
+
+     Reading `nth` back reproduces the same A/B order too, so section 1 stays the same
+     video it was. Nothing is asked of the endpoint here: the assignments row already
+     exists from the first visit, so there is no slot to claim and no count to bump. */
+  if (!PREVIEW) {
+    const rs = peekSaved();
+    if (rs) {
+      const p = live.find(x => x.id === rs.pair);
+      if (p) { setPair(p, Number(rs.nth) || 0, "resume-saved"); return true; }
+      /* Saved pair is no longer live - config changed under them. Fall through and
+         assign fresh; loadSaved() will then decline and they start over honestly. */
+    }
+  }
 
   /* `?pair=P2` pins the pair. Used two ways: forcing a specific pair while testing,
      and running one Connect study per pair so each cell fills to exactly its quota
@@ -1279,8 +1317,15 @@ function save(){
   snapshotLive();
   try {
     localStorage.setItem(LSK, JSON.stringify({
-      v: 2,
+      v: 3,
       pair: PAIR ? PAIR.id : null,
+      /* The A/B ORDER, not just the pair. SLOTS is derived from nth's parity, so
+         without this a resume that fell back to the local hash could seat the two
+         versions the other way round - and the restored section-1 answers would then
+         describe the OTHER video. That mislabels a row rather than losing it, which is
+         far worse: the study would report a preference in the wrong direction and look
+         perfectly valid doing it. */
+      nth: D.assign_nth,
       d: D,
       /* only the fields that must survive - not `last`, which is a live cursor */
       w: [1, 2].map(s => watch[s].vids.map(v => ({
@@ -1301,7 +1346,7 @@ function loadSaved(){
     /* Only resume into the SAME pair. If assignment handed them a different one - it
        should not, but a fallback path could - their old answers describe other videos
        and merging them would silently mislabel the row. */
-    if (!o || o.v !== 2 || !o.pair || !PAIR || o.pair !== PAIR.id) return null;
+    if (!o || o.v !== 3 || !o.pair || !PAIR || o.pair !== PAIR.id) return null;
     return o;
   } catch (e) { return null; }
 }
@@ -1333,6 +1378,13 @@ function restoreUI(specs, prefix){
 
 function applySaved(o){
   Object.assign(D, o.d || {});
+  /* AFTER the Object.assign, deliberately. That call restores the whole of D from the
+     snapshot, including assign_source - which is why a resumed row correctly still
+     reports how the pair was ORIGINALLY chosen rather than "resume-saved". The fact
+     that this session was recovered therefore needs its own field, set here so the
+     restore cannot overwrite it. Not in Code.gs HEADERS, so it arrives in the
+     extra_json overflow column without touching the live endpoint. */
+  D.resumed_from_save = "yes";
   priorMs = o.el || 0;
   [1, 2].forEach(s => {
     (o.w && o.w[s - 1] || []).forEach((v, i) => {
