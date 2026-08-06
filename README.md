@@ -329,6 +329,50 @@ pre-registering.
 
 ---
 
+## Resume, and why the demo deliberately does not have it
+
+A rater who loses power, closes the tab, or gets bumped off wifi reopens the same link
+on the same computer and carries on: answers, watch credit and elapsed time all come
+back. Elapsed time matters as much as the rest, because `analysis.py` rejects a session
+shorter than 85% of the video it served, and without carrying it across a reload an
+honest rater would be failed for having recovered.
+
+Saved state is keyed on the participant id: `embr_pilot_<studyTag>_<PID>`. Connect gives
+every rater a distinct id, so each gets a private slot and nobody can land in anyone
+else's session.
+
+**The demo has resume switched off, on purpose.** A preview has no participant id, so
+the key falls back to `..._anon` - one key shared by everyone who opens it. That is fine
+for a single rater and wrong for a link that gets passed around: two people on one
+machine, or one person handing a laptop to a colleague, would both be `anon`, so the
+second would be dropped into the first person's half-finished session with the ratings
+pre-filled and the watch gate already cleared. It would also leave a reviewer unable to
+take a second look. So a preview build never reads or writes saved state and clears any
+residue on load. Gated on `CFG.demoBanner`, which only `demo/config.js` sets.
+
+Verified end to end, both directions:
+
+| | real study | demo |
+|---|---|---|
+| person 1 answers and walks away | 936 bytes written under `..._<PID>` | **nothing written** |
+| person 2 reopens on that machine | resumes, answers and credit restored | **clean intro screen, 0 saved keys** |
+
+Two related things checked and deliberately left alone:
+
+- **`furthest` and `last` are not persisted.** On resume the player restarts at 0, so a
+  restored `furthest` of 0 matches the real position and no spurious anti-skip rewind
+  fires. Persisting them would be strictly worse.
+- **`loadSaved()` refuses to resume into a different pair.** If assignment ever handed a
+  returning rater another pair, their saved answers describe other videos, and merging
+  them would mislabel the row. The guard is right and stays.
+
+One bug this turned up, now fixed: `applySaved()` repainted the gate bar only for videos
+that had fully cleared it, so someone resuming part-way through saw **0%** even though
+their credit was intact - the snapshot held `{"watched":44.18,"duration":546}` and came
+back as 44s in memory. The credit was never lost, but a rater cannot read memory. They
+see 0% and conclude they have to rewatch nine minutes, which is exactly what resume
+exists to prevent.
+
 ## Pair assignment
 
 `doGet(?action=assign)` in `Code.gs` hands out whichever pair has the fewest raters so far,
