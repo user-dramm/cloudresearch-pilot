@@ -21,7 +21,7 @@ def build_headers():
          "participant_id", "pair_id", "cc_code", "video_source", "slot1_key", "slot2_key"]
     for s in ("1", "2"):
         h += ["s%s_%s" % (s, f) for f in
-              ("overall", "visuals", "audio", "pacing", "errors", "errors_detail",
+              ("overall", "visuals", "audio", "clarity", "errors", "errors_detail",
                "speaker", "speaker_issues", "speaker_other", "speaker_distract",
                "codeword", "comment", "watched_sec", "duration_sec", "watch_pct",
                "seek_fwd", "seek_back", "load_errors", "max_rate", "rate_ms", "paste_count")]
@@ -104,7 +104,7 @@ def main():
                 side = slot[s]
                 base = 3.1 + (gap if side == "new" else 0.0) + harsh
                 r["s%d_overall" % s] = max(1, min(5, round(random.gauss(base, 0.7))))
-                for f, off in (("visuals", .1), ("audio", .2), ("pacing", -.1)):
+                for f, off in (("visuals", .1), ("audio", .2), ("clarity", -.1)):
                     r["s%d_%s" % (s, f)] = max(1, min(5, round(random.gauss(base + off, 0.8))))
 
                 # Speaker block. The old side flags problems more often, and only a

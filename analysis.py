@@ -50,6 +50,16 @@ MAX_PLAYBACK_RATE = 1.25   # video seconds per real second; >1 means sped-up pla
 # not have played them both. The flat floor remains as a backstop for rows where
 # duration failed to record.
 
+# The four rating dimensions, and how to print them. FOUR, not five: a fifth item
+# separating "script" from "content" would not have separated, because halo is a
+# rater's failure to discriminate between conceptually distinct attributes and it
+# worsens when raters are tired or the descriptors are vague. `clarity` replaced
+# `pacing`, and is read through field() so it works before the Apps Script has been
+# redeployed with a column for it.
+METRICS = ("overall", "audio", "visuals", "clarity")
+METRIC_LABEL = {"overall": "overall", "audio": "voice", "visuals": "on-screen",
+                "clarity": "clarity"}
+
 # ---- speaker block --------------------------------------------------------
 # The form no longer asks whether the narration sounded computer-generated. That
 # question named the hypothesis, and anything asked after it was contaminated.
@@ -192,8 +202,10 @@ def main():
             got = (r.get("s%s_codeword" % s) or "").strip().lower()
             if expect and got != expect.strip().lower():
                 why.append("code word wrong on video %s" % s)
-            if len((r.get("s%s_comment" % s) or "").strip()) < MIN_COMMENT_CHARS:
-                why.append("thin comment on video %s" % s)
+            # NO length gate on the per-video comment: it is OPTIONAL in the form now,
+            # and rejecting people for skipping an optional question would exclude
+            # most of the sample. The text gate moved to h2h_why below, which is the
+            # one open question the form requires.
             rate = num(r.get("s%s_max_rate" % s), 1) or 1
             if rate > MAX_PLAYBACK_RATE:
                 why.append("played video %s at %.1fx" % (s, rate))
@@ -206,6 +218,15 @@ def main():
                        % (int(tot / 1000), int(floor), int(clips)))
         if not r.get("h2h_choice_key"):
             why.append("no head-to-head choice")
+
+        # The text gate lives here now. h2h_why is the ONLY open question the form
+        # requires, and it is the whole explanation of the result - the ratings say
+        # one version won, this says why. A row with a one-word answer here has not
+        # given us the thing the study is for, whereas a skipped optional comment has
+        # cost nothing.
+        why_text = (r.get("h2h_why") or "").strip()
+        if len(why_text) < MIN_COMMENT_CHARS:
+            why.append("no real explanation of the choice (%d chars)" % len(why_text))
 
         (dropped if why else kept).append((r, why))
 
@@ -240,8 +261,10 @@ def main():
             side = KEY[k]["version"]
             # `metric`, not `field` - `field()` is a function in this module now,
             # and shadowing it here would break every lookup below it.
-            for metric in ("overall", "visuals", "audio", "pacing"):
-                rec["%s_%s" % (side, metric)] = num(r.get("s%s_%s" % (s, metric)))
+            # Read through field() so a metric that has no column yet, like clarity,
+            # is picked up out of the extra_json overflow instead of coming back empty.
+            for metric in METRICS:
+                rec["%s_%s" % (side, metric)] = num(field(r, "s%s_%s" % (s, metric)))
 
             # Speaker block. `_flag` is having said something seemed off at all;
             # `_fake` is the stronger, unprompted signal - either ticking "Sounded
@@ -310,9 +333,10 @@ def main():
         v = [x[f] for x in recs if x.get(f) is not None]
         return st.mean(v) if v else float("nan")
 
-    for metric in ("overall", "visuals", "audio", "pacing"):
+    for metric in METRICS:
         o, nw = m("old_%s" % metric), m("new_%s" % metric)
-        print("  %-9s old %.2f   new %.2f   delta %+.2f" % (metric, o, nw, nw - o))
+        print("  %-9s old %.2f   new %.2f   delta %+.2f"
+              % (METRIC_LABEL.get(metric, metric), o, nw, nw - o))
     diffs = [x["new_overall"] - x["old_overall"] for x in recs
              if x.get("new_overall") is not None and x.get("old_overall") is not None]
     delta = st.mean(diffs) if diffs else float("nan")

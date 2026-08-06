@@ -110,17 +110,18 @@ def main():
             rate = num(r.get("s%s_max_rate" % s), 1) or 1
             if rate > 1.25:
                 problems.append("played position %s at %.1fx" % (s, rate))
+            # The per-video comment is OPTIONAL, so its length is never a reason to
+            # reject. Rejecting someone for skipping an optional question would throw
+            # away most of the sample. The text gate is on h2h_why, further down.
             comment = (r.get("s%s_comment" % s) or "").strip()
-            if len(comment) < 40:
-                problems.append("thin comment on position %s (%d chars)" % (s, len(comment)))
 
             lines.append("  position %s  =  %-18s  key %s   %s videos" % (s, label, k, nvid))
             lines.append("      watched %.0f%% of %.0fs   seeks fwd %s   max speed %.2fx"
                          % (pct, dur, r.get("s%s_seek_fwd" % s, "?"), rate))
             lines.append("      code word: %s" % cw)
-            lines.append("      overall %s  visuals %s  audio %s  pacing %s"
-                         % (r.get("s%s_overall" % s, "-"), r.get("s%s_visuals" % s, "-"),
-                            r.get("s%s_audio" % s, "-"), r.get("s%s_pacing" % s, "-")))
+            lines.append("      overall %s  voice %s  on-screen %s  clarity %s"
+                         % (field(r, "s%s_overall" % s) or "-", field(r, "s%s_audio" % s) or "-",
+                            field(r, "s%s_visuals" % s) or "-", field(r, "s%s_clarity" % s) or "-"))
             spk = field(r, "s%s_speaker" % s)
             if spk:
                 extra = field(r, "s%s_speaker_issues" % s)
@@ -128,7 +129,10 @@ def main():
                 lines.append("      speaker: %s%s%s" % (spk,
                              ("  [%s]" % extra) if extra else "",
                              ("  distracting: %s" % dist) if dist else ""))
-            lines.append("      \"%s\"" % (comment[:96] + ("..." if len(comment) > 96 else "")))
+            if comment:
+                lines.append("      \"%s\"" % (comment[:96] + ("..." if len(comment) > 96 else "")))
+            else:
+                lines.append("      (skipped the optional comment)")
 
         wk = r.get("h2h_choice_key", "")
         winfo = KEY.get(wk)
@@ -143,6 +147,8 @@ def main():
         lines.append("  preferred: %s   position %s   margin: %s"
                      % (verdict, r.get("h2h_choice_slot", "?"), mag))
         lines.append("      \"%s\"" % (why[:96] + ("..." if len(why) > 96 else "")))
+        if len(why) < 40:
+            problems.append("no real explanation of the choice (%d chars)" % len(why))
         sb = field(r, "standby")
         if sb:
             lines.append("  would train a coworker with their pick: %s" % sb)

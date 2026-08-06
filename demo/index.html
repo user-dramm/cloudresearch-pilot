@@ -418,60 +418,57 @@ function vk(slot, i){ return slot + "_" + i; }
 const SCALE5 = ["Poor", "Fair", "Good", "Very good", "Excellent"];
 
 const QS = [
-  /* 1. Top-of-mind reaction, before we have named a single thing to look for.
-        The three nouns only tell a rater what kind of thing to write about;
-        none of them hints at a right answer. */
-  { id:"comment", t:"area",
-    q:"First, in your own words: how did that video come across to you?",
-    hint:"Anything that stood out about the visuals, the pacing, or the speaker — good or bad. Write as much as you like.",
-    min:() => CFG.minCommentChars },
+  /* 1. OPTIONAL, and FIRST. Optional because the per-video block is deliberately
+        minimal - four clicks and out for anyone who wants that. First because a
+        closed question asked before an open one gets echoed back in the open
+        answer, so a text box placed after four ratings collects our own prompts
+        rather than their reaction. Being optional makes the position free: anyone
+        who skips it loses nothing, and anyone who answers gives unprimed data.
+        No `min` - a floor on an optional question is a contradiction. */
+  { id:"comment", t:"area", optional:true,
+    q:"Anything stand out about that video, good or bad?",
+    hint:"Optional — skip it if nothing comes to mind. A sentence is plenty." },
 
-  /* 2. Ratings. Every point is labelled in words rather than shown as a digit
-        with only the ends named. Fully labelled scales measure better - higher
-        test-retest reliability, and the gain is largest among respondents with
-        less formal education, which is this panel. The value submitted is still
-        1-5, so analysis.py and clause 3 of the criterion are unaffected. */
+  /* 2. FOUR ratings, not five. A fifth item separating "script" from "content"
+        would not have separated: halo is a rater's failure to discriminate between
+        conceptually distinct attributes, it worsens when descriptors are unclear or
+        when raters are tired, and a lay viewer nine minutes in will answer both
+        near-identically. Four dimensions phrased in a rater's language rather than
+        a producer's.
+
+        Every point is labelled in words rather than shown as a digit with only the
+        ends named: fully labelled scales have higher test-retest reliability and the
+        gain is largest among respondents with less formal education, which is this
+        panel. The submitted value is still 1-5, so clause 3 is unaffected. */
   { id:"overall", t:"scale", q:"Overall, how would you rate this training video?", labels:SCALE5 },
-  { id:"visuals", t:"scale", q:"The slides and on-screen visuals", labels:SCALE5 },
+  { id:"audio",   t:"scale", q:"The voice and how it was delivered", labels:SCALE5 },
 
-  /* 3. Interleaved on purpose. Five rating scales in a row with identical answer
-        options invite straightlining - answering the same on every row without
-        reading. Breaking the run costs nothing and protects `overall`, which the
-        criterion depends on.
-        Narrowed to ON SCREEN only: the old version asked about typos AND wrong
-        words AND unfinished-looking slides in one question, so a "yes" could not
-        be interpreted, and "mispronounced words" double-counted against the
-        speaker question below. Audio belongs to the speaker block now. */
-  { id:"errors", t:"choice",
-    q:"Did you notice anything wrong on screen? Typos, wrong words, anything that looked unfinished.",
-    opts:["No, nothing I noticed","Yes, one or two","Yes, several"] },
-  { id:"errors_detail", t:"short", q:"What did you notice?", optional:true,
-    showIf:{ id:"errors", vals:["Yes, one or two","Yes, several"] } },
+  /* 3. The code word sits HERE, mid-block, on purpose. It has to be asked per video
+        anyway as proof of watching, and dropping it between the scales breaks up what
+        would otherwise be four identical rows in a row - the straightlining setup,
+        sitting directly on top of `overall`, which the criterion is computed from.
+        Free protection: no question added, one moved.
 
-  { id:"audio",  t:"scale", q:"The narration and sound", labels:SCALE5 },
-  /* Unipolar on purpose. A bipolar too-slow/too-fast scale puts "best" in the
-     middle, which would make the mean meaningless - and analysis.py means it. */
-  { id:"pacing", t:"scale", q:"Could you follow the pacing comfortably?",
-    labels:["Hard to follow","A bit hard to follow","Mostly comfortable","Comfortable","Very easy to follow"] },
-
-  /* One code word per section, burned into the SECOND video. Placing it in the
-     second rather than the first is the point: it proves the rater was still there
-     at the end of the set, where the gate alone only proves the video played.
-
-     OPTIONAL IN A PREVIEW BUILD, and required in the real study. The code word sits
-     at 45% of the video while a preview's gate opens at 5%, and forward seeking is
-     blocked - so a reviewer reaches this question without having seen the word and
-     with no way to go and find it. Required, it would be a wall nobody could pass. */
+        Optional in a preview build only. The code word is burned in 45% into part 2
+        while a preview's gate opens at 5%, and forward seeking is blocked, so a
+        reviewer reaches this having never seen the word and with no way to find it. */
   { id:"codeword", t:"short", optional: !!CFG.demoBanner,
     q: CFG.demoBanner
        ? "What was the code word shown in the second part of the video? (In this preview you probably didn't reach it - leave blank.)"
        : "What was the code word shown in the second part of the video?" },
 
+  { id:"visuals", t:"scale", q:"The slides and what was on screen", labels:SCALE5 },
+  /* Unipolar, so higher is always better and the mean stays meaningful. This is the
+     dimension closest to what the pipeline actually changed, which is why it earns a
+     slot while "content" does not. */
+  { id:"clarity", t:"scale", q:"How clearly did it explain things?",
+    labels:["Not clearly at all","Not very clearly","Clearly enough","Clearly","Very clearly"] },
+
   /* 4. The speaker block goes LAST, and nothing follows it, because "Sounded
         fake" is the one option in this whole form that reveals what the study is
         testing. Asked this way the question never mentions AI at all: a rater who
-        writes or ticks that unprompted is far stronger evidence than one who
-        agreed with a box we handed them. */
+        ticks that unprompted is far stronger evidence than one who agreed with a box
+        we handed them. Three options, one click. */
   { id:"speaker", t:"choice", q:"Last thing for this video. How was the speaker?",
     opts:["The speaker did well","The speaker was okay","Something seemed off about the speaker"] },
 
@@ -536,21 +533,44 @@ const H2H = [
      a choice plus its strength - which is the documented way to get the
      sensitivity of a comparison and the magnitude of a rating from one question
      pair. */
+  /* Revealed once they have chosen, so it reads as a follow-up to their own answer
+     rather than a wall of questions. THE ONLY REQUIRED OPEN QUESTION IN THE FORM.
+     It earns that: the ratings establish that one version won, and this single answer
+     is the entire explanation of why - the thing the writeup is built on and the
+     thing no number can supply. Everything else open is optional. */
+  { id:"h2h_why", t:"area",
+    q:"Can you share why? What made the difference between them?",
+    min:() => CFG.minWhyChars,
+    showIf:{ id:"h2h_choice", vals:["The first video","The second video"] } },
+
+  /* Magnitude, not confidence. The old question asked how SURE they were, which
+     measures certainty about their own judgement. This asks how BIG the gap was,
+     which is the thing we actually need to know: a 65% preference where everyone
+     says "barely any difference" is a completely different finding from 65%
+     saying "much better", and confidence cannot tell those apart.
+     Together with the forced choice above this is the graded-preference format -
+     a choice plus its strength - which is the documented way to get the
+     sensitivity of a comparison and the magnitude of a rating from one question
+     pair. */
   { id:"h2h_magnitude", t:"choice", q:"How much better was it?",
     opts:["Barely any difference","Slightly better","Clearly better","Much better"] },
-
-  { id:"h2h_why", t:"area", q:"Why? Be as specific as you can about what made the difference.", min:() => CFG.minWhyChars },
 
   /* Moved here from the per-video block, where it was asked twice. It invites a
      rater to imagine being a care worker, and we deliberately do not screen for
      care experience - so asked twice about videos in isolation it was a weak
      hypothetical. Asked once about the video they just chose, it is a real
-     question with a usable answer. */
+     question with a usable answer - and it carries the "content" judgement that no
+     longer has its own rating scale. */
   { id:"standby", t:"choice",
     q:"Would you be comfortable if a new coworker was trained with the one you picked?",
     opts:["Yes, no reservations","Yes, with some reservations","No"] },
 
-  { id:"h2h_other", t:"area", q:"Anything else you want us to know?", optional:true }
+  /* Optional, and reusing the existing h2h_other column rather than adding a field
+     that would need an Apps Script redeploy. Expect roughly half to answer, so treat
+     it as a bonus rather than something the analysis leans on. */
+  { id:"h2h_other", t:"area", optional:true,
+    q:"Anything you would change about the one you liked less?",
+    hint:"Optional." }
 ];
 
 /* ---------- question rendering ---------- */
