@@ -386,6 +386,12 @@ const D = {
   ts_client: new Date().toISOString(),
   study_tag: CFG.studyTag, form_version: FORM_VERSION,
   participant_id: PID, is_selftest: SELFTEST ? "yes" : "no",
+  /* Connect passes these alongside participantId. Optional, but assignmentId is
+     unique per participant per session, which makes matching a Sheet row to a Connect
+     submission unambiguous at approval time - useful when someone disputes a
+     rejection. They land in extra_json until the Apps Script gains columns. */
+  assignment_id: url.get("assignmentId") || "",
+  project_id: url.get("projectId") || "",
   user_agent: navigator.userAgent, screen_w: screen.width, screen_h: screen.height,
   tz: Intl.DateTimeFormat().resolvedOptions().timeZone, referrer: document.referrer || "",
   completion_code: CFG.completionCode

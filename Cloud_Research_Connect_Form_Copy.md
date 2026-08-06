@@ -1,111 +1,161 @@
-# CloudResearch Connect — study setup, field by field
+# CloudResearch Connect — everything needed to launch
 
-Copy of every field you have to fill in, plus the four settings that break the study if they
-are wrong. Nothing here reveals which video is which; participants must never learn that one
-version is older than the other, or they will rate the story rather than the video.
+Field-by-field copy plus the settings that break the study if they are wrong.
+Verified against Connect's own documentation, not from memory:
+[Setting Up a Project](https://connect-researcher-help.cloudresearch.com/hc/en-us/articles/4416207746068-Setting-Up-a-Project),
+[Integrating your Survey](https://connect-researcher-help.cloudresearch.com/hc/en-us/articles/21181529476500-How-to-Integrate-your-Survey-with-Connect),
+[Project Completion](https://connect-researcher-help.cloudresearch.com/hc/en-us/articles/5046202939796-Project-Completion),
+[Project Link](https://connect-researcher-help.cloudresearch.com/hc/en-us/articles/4416245469332-Project-Link).
 
 ---
 
-## 1. Study basics
+## 1. The one thing that would block every rater
 
-**Study name** (internal, participants do not see it)
+Connect appends its participant identifier to your Project URL as **`participantId`**.
+The form reads exactly that (`index.html`, `const PID = url.get("participantId")`), and
+**the Start button is disabled without it** — deliberately, because a rater with no ID
+cannot be matched to a Connect submission or paid.
+
+So the Project URL must be the bare page, with no query string of its own:
+
+```
+https://user-dramm.github.io/cloudresearch-pilot/
+```
+
+Connect then sends people to `...?participantId=XXXX`. If you ever add your own
+parameter to the Project URL, check the result is `?a=b&participantId=...` and not two
+`?` characters — that is the failure mode, and it silently disables Start for everyone.
+
+**Test it before launching** by opening the exact link Connect generates. Not a link
+you typed by hand.
+
+The form also captures `assignmentId` and `projectId` if present. Both optional per the
+docs, but `assignmentId` is unique per participant per session, which makes matching a
+Sheet row to a Connect submission unambiguous if someone disputes a rejection.
+
+## 2. Completion — belt and braces
+
+Connect needs either an end-of-study redirect or a completion code. This study uses
+**both**, because either one alone has a failure mode.
+
+- **Completion code:** `EMBR7K2QX4`. Set it as a *fixed* code in Connect and it must
+  match `completionCode` in `config.js` exactly. Connect disallows `0`, `1`, `I` and
+  `O` in fixed codes; this one is clean.
+- **Redirect URL:** copy it from the end of the Create-a-Study wizard and paste it into
+  `redirectUrl` in `config.js`. The form then sends people back automatically four
+  seconds after their answers are saved, and still shows the code in case the redirect
+  fails.
+
+A fixed code is shareable by definition, so **approve against the Sheet, not the code**.
+A real submission is a row carrying that participant's ID that clears the gates.
+
+## 3. Study fields
+
+**Internal name**
 
 > Training video quality comparison — pilot, Aug 2026
 
-**Title shown to participants**
+**Title participants see**
 
 > Watch two short training videos and tell us which is better
 
-**Description shown to participants**
+**Description**
 
 > We make short training videos for people who work in senior care, and we want honest
-> feedback on how they come across. You will watch two videos, about nine minutes each, and
-> answer a few questions about each one. Then you will tell us which of the two you thought
-> was better and why.
+> feedback on how they come across. You'll watch two videos, about nine minutes each,
+> and answer four quick questions about each one. At the end you'll say which of the two
+> you thought was better and why.
 >
-> You do not need any healthcare experience. We want an ordinary viewer's reaction, not an
-> expert review. There are no right answers and we are not testing you.
+> You don't need any healthcare experience. We want an ordinary viewer's reaction, not
+> an expert review. There are no right answers and we are not testing you.
 >
-> Please plan for about 25 minutes in one sitting, on a desktop or laptop with sound. The
-> questions stay locked until each video has actually played, so you cannot skip ahead.
+> Please plan for about 25 minutes in one sitting, on a desktop or laptop with sound.
+> Each video plays in two parts with a short pause between them. The questions stay
+> locked until a video has actually played, and skipping ahead rewinds you, so there is
+> no way to rush it.
 
 **Estimated time:** 25 minutes
-**Payment:** set to your platform's rate for 25 minutes (budget assumed ~$7/session)
+**Payment:** $4.17 (that is $10.01/hour for 25 minutes)
 
-Say "about nine minutes each" and "about 25 minutes" honestly. Under-stating the length is the
-single most reliable way to earn low ratings and slow future recruitment on a panel where
-participants talk to each other.
+Say "about nine minutes each" and "about 25 minutes" honestly. Understating length is
+the most reliable way to earn poor ratings on a panel where participants talk to each
+other.
 
----
-
-## 2. The four settings that matter
+## 4. Settings that matter
 
 | Setting | Value | Why |
 |---|---|---|
-| **Project URL** | your GitHub Pages URL | Connect appends `?participantId=…`, which the form reads. If your URL already carries a query string Connect appends with `&` — test the exact link Connect generates before launching |
-| **Completion** | *fixed* code `EMBR7K2QX4` | Must match `completionCode` in `config.js`. Connect disallows `0`, `1`, `I` and `O` in fixed codes; this one is clean |
-| **Devices** | desktop and laptop **only** | Mobile breaks the watch gate. Do not leave tablet or phone ticked |
-| **Exclude previous participants** | ticked, on the main run | So the three dry-run people cannot take it again |
+| **Project URL** | the bare Pages URL, no query string | Connect appends `?participantId=` |
+| **Completion** | fixed code `EMBR7K2QX4` | must match `config.js` |
+| **Redirect** | paste the wizard's URL into `config.js` | the more reliable of the two methods |
+| **Devices** | desktop and laptop **only** | under 640px the form replaces itself with "needs a desktop"; do not leave phone or tablet ticked |
+| **Exclude previous participants** | ticked on every run after the first | stops the dry-run three, and stops anyone taking two pairs |
 
-Also copy the **Redirect URL** from the end of the Create-a-Study wizard into `redirectUrl` in
-`config.js`. Connect treats the redirect as the more reliable completion method: the
-participant is sent back automatically instead of having to carry a code across. The form
-still shows the code as a fallback.
+## 5. Screening
 
----
+Keep it minimal — every screener slows the fill, and this study wants an ordinary viewer.
 
-## 3. Screening
+- Location: United States
+- Language: fluent English
+- Age: 18+
+- **No occupation or industry screener.** You are not recruiting care workers. A care
+  worker's professional opinion of the *content* is a different question from the one
+  being asked, and screening for it would shrink the pool for no gain.
 
-Keep it minimal. Every screener narrows the pool and slows the fill, and this study wants an
-ordinary viewer.
-
-- **Location:** United States
-- **Language:** fluent English
-- **Age:** 18+
-- No occupation or industry screener. You are not recruiting care workers — you are asking
-  whether the video is any good, and a care worker's professional opinion of the *content* is
-  a different question from the one being asked here.
-
----
-
-## 4. Instructions on the Connect task page
+## 6. Instructions on the Connect task page
 
 > Open the study link and keep the tab open until you see the completion screen.
 >
-> You will need sound. Each video must play through before its questions unlock — skipping
-> ahead or speeding it up will not unlock them any sooner.
+> You'll need sound, on a desktop or laptop. Each video plays in two parts with a short
+> black pause in the middle — keep watching, it hasn't ended.
 >
-> Please answer in your own words. One-word answers and copied text will not be approved.
+> A code word appears on screen during the second part of each video. There's a box
+> right under the video: type it in as soon as you see it.
 >
-> At the end you will get a code and be sent back here automatically. If the redirect does
-> not happen, paste the code shown on screen.
+> Your progress is saved as you go. If your browser closes or you lose power, reopen
+> this same link on the same computer and you'll carry on from where you stopped.
+>
+> At the end you'll be sent back here automatically. If that doesn't happen, paste the
+> code shown on screen.
 
----
+## 7. How many to order
 
-## 5. Two runs, not one
+The endpoint hands each arriving rater whichever pair has the fewest people, so the
+cells fill evenly without you managing anything. But at exactly 35 completions across
+five pairs there is no slack, and the balancer only lands 7-everywhere about half the
+time. Two options:
 
-**Dry run first:** a separate study, 3 participants, ~$21. Its job is to test the cost model
-against reality before the main spend. Check the Sheet afterwards for three rows with
-sensible watch percentages, real sentences in the comments, and sessions somewhere around 25
-minutes. If sessions come in much longer, the main run costs more than budgeted; if the
-comments are thin, tighten the instructions before spending the rest.
+- **One study, ~35 ordered, then top up.** Export the Sheet, check the per-pair counts
+  that `analysis.py` prints under Clause 1, and order the difference. Top-ups go
+  automatically to the thinnest pair. Median cost 35 completions, 90% of runs done by 38.
+- **Five studies of 7, one per pair**, each with `?pair=P1` … `?pair=P5` on the URL.
+  Guarantees exactly 7 per cell for exactly 35 completions. More setup, and
+  *exclude previous participants* must be ticked on studies 2 through 5. A pinned pair
+  still asks the endpoint for its alternation index, so A/B order keeps taking turns.
 
-**Then the main run:** 7 raters per pair. Connect only pays completions, so expect to launch
-slightly more than your target to land it; top up at the end rather than over-ordering.
+`tools/assign_sim.py` and `tools/power.py` have the numbers behind both.
 
----
+## 8. Two runs
 
-## 6. Approving and rejecting
+**Dry run first:** a separate study, 3 participants, ~$18 with fees. Its job is to test
+the cost model and the instrument against reality before the main spend. Afterwards
+check the Sheet for three rows with sensible watch percentages, correct code words,
+sessions around 25 minutes, and — the thing to actually watch — whether anyone wrote
+anything in the optional boxes. If the written feedback is thin, that is the moment to
+make the "why" question required for the raters who see it.
 
-Approve against **the Sheet**, not the completion code. A fixed code is shareable by
-definition; a real submission is a row carrying that participant's ID that clears the quality
-gates. `analysis.py` prints the exclusion list with a reason per row, and that list is what
-you work from.
+**Then the main run.** Connect pays completions only, so expect to launch more than
+your target to land it.
 
-**Reject only on the objective gates:** didn't watch enough of a video, wrong code word,
-impossible playback speed, copy-pasted or one-word text, session impossibly short.
+## 9. Approving and rejecting
 
-**Never reject on someone's rating.** If a rater preferred the version you were hoping they
-wouldn't, that is the finding — it is the entire reason to run the study. Rejecting it is
-both dishonest and self-defeating: unfair rejections follow you, and Connect participants talk
-to each other, so your next study fills slower.
+`python3 tools/decode_responses.py responses.csv --only-problems` prints the reject
+shortlist with a reason per row. Work from that.
+
+**Reject only on the objective gates:** didn't watch enough, wrong code word, impossible
+playback speed, session impossibly short.
+
+**Never reject on someone's rating.** A rater who preferred the archived version is the
+finding — it is the entire reason to run a blind study. Rejecting it is dishonest and
+self-defeating: unfair rejections follow you, and Connect participants talk, so your
+next study fills slower.
