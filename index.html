@@ -460,20 +460,22 @@ const QS = [
   { id:"overall", t:"scale", q:"Overall, how would you rate this training video?", labels:SCALE5 },
   { id:"audio",   t:"scale", q:"The narration - the voice and how it was delivered", labels:SCALE5 },
 
-  /* The only conditional here, and only for raters who scored the narration poorly.
-     Optional: someone who gave it a 1 or 2 has already told us the useful part, and
-     this only asks what it was. This is where "it sounded robotic" or "the pauses
-     were odd" now comes from - volunteered rather than picked off a list. */
-  { id:"audio_why", t:"short", optional:true,
-    q:"What was off about the narration?",
-    hint:"Optional - a few words is plenty.",
-    showIf:{ id:"audio", vals:["1","2"] } },
-
   { id:"visuals", t:"scale", q:"The slides and what was on screen", labels:SCALE5 },
   /* "Explained" rather than "content": a rater can judge whether something was
      explained well, whereas asking about content invites them to rate the subject
      matter, which is identical across the two versions and not what is being tested. */
-  { id:"clarity", t:"scale", q:"How well did it explain things?", labels:SCALE5 }
+  { id:"clarity", t:"scale", q:"How well did it explain things?", labels:SCALE5 },
+
+  /* Placed after all four ratings, not between them. Only raters who scored the
+     narration 1 or 2 ever see it, and it is optional even then - someone who gave it a
+     low score has already told us the useful part; this only asks what it was. Sitting
+     mid-block it interrupted an otherwise uninterrupted run of four clicks.
+     This is now the only route to "it sounded robotic" or "the pauses were odd", and
+     the words are volunteered rather than picked off a list we supplied. */
+  { id:"audio_why", t:"short", optional:true,
+    q:"You rated the narration low - what was off about it?",
+    hint:"Optional - a few words is plenty.",
+    showIf:{ id:"audio", vals:["1","2"] } }
 ];
 
 /* The head-to-head stays a FORCED BINARY CHOICE, for two independent reasons.
@@ -539,18 +541,15 @@ const H2H = [
     q:"Would you be comfortable if a new coworker was trained with the one you picked?",
     opts:["Yes, no reservations","Yes, with some reservations","No"] },
 
-  /* The per-video comments, asked HERE rather than inside each video block, so the
-     per-video block stays all-clicks. The ids are the s1_/s2_ field names on purpose:
-     rendered with an empty prefix, `s1_comment` writes straight into the existing
-     s1_comment column, so this needs no new fields and no Apps Script redeploy.
-     Attribution survives because slot 1 and slot 2 are recorded per row - "the first
-     video" is unambiguous to the rater and resolvable to a version by us. */
+  /* ONE box rather than one per video. Three optional text boxes in a row invited
+     skipping all three; two is likelier to get actual words. The cost is attribution -
+     a comment naming "the first one" is resolvable via slot1_key, but a general remark
+     is not attributable to a version at all. Accepted: the head-to-head "why" above is
+     where attributable comparative detail comes from, and this is a catch-all.
+     Uses the existing s1_comment column, so no new field and no redeploy. */
   { id:"s1_comment", t:"area", optional:true,
-    q:"Anything you want to say about the first video?",
-    hint:"Optional. What stood out, good or bad." },
-  { id:"s2_comment", t:"area", optional:true,
-    q:"And the second video?",
-    hint:"Optional." },
+    q:"Anything you want to say about either video?",
+    hint:"Optional. What stood out, good or bad - and which one you mean, if it matters." },
 
   /* Final catch-all. Reuses the existing h2h_other column. */
   { id:"h2h_other", t:"area", optional:true,
