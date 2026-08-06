@@ -1210,6 +1210,24 @@ function go(i){
 const LSK = "embr_pilot_" + CFG.studyTag + "_" + (PID || "anon");
 let priorMs = 0;                       /* elapsed time carried over from earlier visits */
 
+/* RESUME IS OFF IN PREVIEW BUILDS, and deliberately so.
+
+   The key above ends in PID, and a preview has no participant id, so every visitor
+   to the demo link shares one key: embr_pilot_<tag>_anon. In the real study that is
+   exactly right - Connect gives each rater a distinct id, so each gets a private
+   slot and a rater who loses power carries on where they stopped.
+
+   A demo link is different in kind: it is SHARED, and passed round. Two people on one
+   machine, or one person handing a laptop to a colleague, would both be "anon" - so
+   the second would be dropped into the first person's half-finished session, with
+   their ratings already filled in and the watch gate already satisfied. That is
+   confusing, and it makes the demo misrepresent the instrument. A reviewer wanting a
+   second look would likewise be unable to start over.
+
+   So a preview never reads or writes saved state, and clears anything already there.
+   The real study is untouched: PREVIEW is false whenever demoBanner is unset. */
+const PREVIEW = !!CFG.demoBanner;
+
 /* Nothing may be written until resume has had its chance to read.
 
    Without this the periodic save RACES the resume and destroys it: the polling loop
@@ -1257,7 +1275,7 @@ function snapshotLive(){
 }
 
 function save(){
-  if (!saveArmed) return;
+  if (!saveArmed || PREVIEW) return;
   snapshotLive();
   try {
     localStorage.setItem(LSK, JSON.stringify({
@@ -1487,6 +1505,12 @@ $("#btn-retry").addEventListener("click", async () => {
 
   /* Resume, if this browser has unfinished work for this pair. Screens are rebuilt
      first so there is something to restore into. */
+  if (PREVIEW) {
+    /* Wipe residue from whoever walked the demo on this machine before. */
+    try { localStorage.removeItem(LSK); } catch(_){}
+    go(0);
+    return;
+  }
   const saved = loadSaved();
   if (saved) {
     const at = applySaved(saved);
