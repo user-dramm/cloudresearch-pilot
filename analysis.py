@@ -219,14 +219,21 @@ def main():
         if not r.get("h2h_choice_key"):
             why.append("no head-to-head choice")
 
-        # The text gate lives here now. h2h_why is the ONLY open question the form
-        # requires, and it is the whole explanation of the result - the ratings say
-        # one version won, this says why. A row with a one-word answer here has not
-        # given us the thing the study is for, whereas a skipped optional comment has
-        # cost nothing.
-        why_text = (r.get("h2h_why") or "").strip()
-        if len(why_text) < MIN_COMMENT_CHARS:
-            why.append("no real explanation of the choice (%d chars)" % len(why_text))
+        # NO TEXT GATE ANYWHERE. Every open question in the form is optional now:
+        # h2h_why is asked only of raters who reported a clear difference and is
+        # optional even then, and the per-video comments are optional. Rejecting a row
+        # for a short or absent answer would mean rejecting people for skipping what
+        # they were told they could skip.
+        #
+        # This is defensible because text length was only ever a proxy for effort. The
+        # gates that actually establish someone did the task are objective and remain:
+        # watch percentage per side, playback speed, session length derived from the
+        # clips served, and the code word burned into part 2.
+        #
+        # The cost is real and worth stating: a run can now come back VALIDATED with
+        # very little written explanation attached. Watch the response rate on
+        # h2h_why in the dry run - if it is thin, that is the moment to make it
+        # required for the raters who see it, not after the main run.
 
         (dropped if why else kept).append((r, why))
 

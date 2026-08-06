@@ -146,9 +146,10 @@ def main():
         why = (r.get("h2h_why") or "").strip()
         lines.append("  preferred: %s   position %s   margin: %s"
                      % (verdict, r.get("h2h_choice_slot", "?"), mag))
-        lines.append("      \"%s\"" % (why[:96] + ("..." if len(why) > 96 else "")))
-        if len(why) < 40:
-            problems.append("no real explanation of the choice (%d chars)" % len(why))
+        lines.append("      %s" % ('"%s"' % (why[:96] + ("..." if len(why) > 96 else ""))
+                                    if why else "(no explanation given - optional)"))
+        # Not a reject reason: h2h_why is optional and only shown to raters who
+        # reported a clear difference. Printed so it can be read, never gated.
         sb = field(r, "standby")
         if sb:
             lines.append("  would train a coworker with their pick: %s" % sb)

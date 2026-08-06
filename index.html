@@ -418,18 +418,16 @@ function vk(slot, i){ return slot + "_" + i; }
 const SCALE5 = ["Poor", "Fair", "Good", "Very good", "Excellent"];
 
 const QS = [
-  /* 1. OPTIONAL, and FIRST. Optional because the per-video block is deliberately
-        minimal - four clicks and out for anyone who wants that. First because a
-        closed question asked before an open one gets echoed back in the open
-        answer, so a text box placed after four ratings collects our own prompts
-        rather than their reaction. Being optional makes the position free: anyone
-        who skips it loses nothing, and anyone who answers gives unprimed data.
-        No `min` - a floor on an optional question is a contradiction. */
-  { id:"comment", t:"area", optional:true,
-    q:"Anything stand out about that video, good or bad?",
-    hint:"Optional — skip it if nothing comes to mind. A sentence is plenty." },
+  /* NO WRITING IN THIS BLOCK. Every per-video question is a click. All free text now
+     lives in the end block, including the per-video comments, which are asked there
+     as `s1_comment` and `s2_comment`.
 
-  /* 2. FOUR ratings, not five. A fifth item separating "script" from "content"
+     The cost of that, stated so it is not forgotten: a comment written at the end
+     about the first video is recalled through the second one. It is the trade for a
+     per-video block a rater can clear in six clicks, and since those comments are
+     optional it is a reasonable one. */
+
+  /* FOUR ratings, not five. A fifth item separating "script" from "content"
         would not have separated: halo is a rater's failure to discriminate between
         conceptually distinct attributes, it worsens when descriptors are unclear or
         when raters are tired, and a lay viewer nine minutes in will answer both
@@ -530,30 +528,25 @@ const H2H = [
      says "barely any difference" is a completely different finding from 65%
      saying "much better", and confidence cannot tell those apart.
      Together with the forced choice above this is the graded-preference format -
-     a choice plus its strength - which is the documented way to get the
-     sensitivity of a comparison and the magnitude of a rating from one question
-     pair. */
-  /* Revealed once they have chosen, so it reads as a follow-up to their own answer
-     rather than a wall of questions. THE ONLY REQUIRED OPEN QUESTION IN THE FORM.
-     It earns that: the ratings establish that one version won, and this single answer
-     is the entire explanation of why - the thing the writeup is built on and the
-     thing no number can supply. Everything else open is optional. */
-  { id:"h2h_why", t:"area",
-    q:"Can you share why? What made the difference between them?",
-    min:() => CFG.minWhyChars,
-    showIf:{ id:"h2h_choice", vals:["The first video","The second video"] } },
-
-  /* Magnitude, not confidence. The old question asked how SURE they were, which
-     measures certainty about their own judgement. This asks how BIG the gap was,
-     which is the thing we actually need to know: a 65% preference where everyone
-     says "barely any difference" is a completely different finding from 65%
-     saying "much better", and confidence cannot tell those apart.
-     Together with the forced choice above this is the graded-preference format -
-     a choice plus its strength - which is the documented way to get the
-     sensitivity of a comparison and the magnitude of a rating from one question
-     pair. */
+     a choice plus its strength - which is the documented way to get the sensitivity
+     of a comparison and the magnitude of a rating from one question pair. */
   { id:"h2h_magnitude", t:"choice", q:"How much better was it?",
     opts:["Barely any difference","Slightly better","Clearly better","Much better"] },
+
+  /* Asked ONLY of raters who said the gap was clear, and optional even then.
+     Someone who felt a real difference can usually name it; someone who said "barely
+     any difference" has nothing to explain and would be padding to fill a box.
+
+     Two consequences of it being optional, recorded because they are easy to forget:
+     there is now NO required open question anywhere in the form, and therefore no
+     text-length quality gate - analysis.py must not reject rows for a short answer
+     here, or it would reject people for skipping something optional. The integrity
+     gates are the objective ones: watch percentage, playback speed, session length
+     and the code word. */
+  { id:"h2h_why", t:"area", optional:true,
+    q:"Can you tell us why it was clearly better?",
+    hint:"Optional, but this is the most useful thing you can give us — even a sentence.",
+    showIf:{ id:"h2h_magnitude", vals:["Clearly better","Much better"] } },
 
   /* Moved here from the per-video block, where it was asked twice. It invites a
      rater to imagine being a care worker, and we deliberately do not screen for
@@ -565,12 +558,23 @@ const H2H = [
     q:"Would you be comfortable if a new coworker was trained with the one you picked?",
     opts:["Yes, no reservations","Yes, with some reservations","No"] },
 
-  /* Optional, and reusing the existing h2h_other column rather than adding a field
-     that would need an Apps Script redeploy. Expect roughly half to answer, so treat
-     it as a bonus rather than something the analysis leans on. */
+  /* The per-video comments, asked HERE rather than inside each video block, so the
+     per-video block stays all-clicks. The ids are the s1_/s2_ field names on purpose:
+     rendered with an empty prefix, `s1_comment` writes straight into the existing
+     s1_comment column, so this needs no new fields and no Apps Script redeploy.
+     Attribution survives because slot 1 and slot 2 are recorded per row - "the first
+     video" is unambiguous to the rater and resolvable to a version by us. */
+  { id:"s1_comment", t:"area", optional:true,
+    q:"Anything you want to say about the first video?",
+    hint:"Optional. What stood out, good or bad." },
+  { id:"s2_comment", t:"area", optional:true,
+    q:"And the second video?",
+    hint:"Optional." },
+
+  /* Final catch-all. Reuses the existing h2h_other column. */
   { id:"h2h_other", t:"area", optional:true,
-    q:"Anything you would change about the one you liked less?",
-    hint:"Optional." }
+    q:"Anything we didn't ask about that you'd like to share?",
+    hint:"Optional — and genuinely useful. Written feedback tells us things the ratings can't." }
 ];
 
 /* ---------- question rendering ---------- */
