@@ -68,9 +68,11 @@ about **0.1%** of the time and some pair would land 4 or fewer about **61%** of 
 because the criterion needs new ahead in at least 4 of 5 pairs.
 
 So the endpoint assigns instead. Each rater gets whichever pair currently has the fewest
-people, plus an index that alternates who sees the new version first. Across 3,000 simulated
-runs with realistic abandonment, **91% land within one rater of even**; the smallest pair in any
-run was 4. Order comes out near 50/50 within each pair.
+people, plus an index that alternates who sees the new version first. Re-simulated 4,000
+times with 20% abandonment, **72% of runs land within one rater of even** and the smallest
+pair was 4. (An earlier draft of this file said 91%. That number was wrong; see the
+correction note in README.md.) Order comes out near 50/50 within each pair - 52.8% measured,
+the residual being arithmetic rather than bias.
 
 Refreshing doesn't reroll. Someone who opens the link and wanders off stops holding a slot
 after 45 minutes. If the endpoint is unreachable the form assigns locally and records that it

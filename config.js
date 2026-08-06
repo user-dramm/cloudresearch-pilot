@@ -87,22 +87,18 @@ window.STUDY_CONFIG = {
       id: "P2", cc: "EMBR-CC-00158", enabled: true,
       versions: [
         { key: "k5qd", yts: ["yUKJ5gmt-XU"],
-                       srcs: ["https://clips.example.com/k5qd_m1.mp4",
-                              "https://clips.example.com/k5qd_m3.mp4"] },
+                       srcs: ["", ""] },
         { key: "k2wj", yts: ["6DqvPsedtk4"],
-                       srcs: ["https://clips.example.com/k2wj_m1.mp4",
-                              "https://clips.example.com/k2wj_m3.mp4"] }
+                       srcs: ["", ""] }
       ]
     },
     {
       id: "P3", cc: "EMBR-CC-00162", enabled: true,
       versions: [
         { key: "k8rn", yts: ["EmbyxGru4u4"],
-                       srcs: ["https://clips.example.com/k8rn_m1.mp4",
-                              "https://clips.example.com/k8rn_m3.mp4"] },
+                       srcs: ["", ""] },
         { key: "k4zf", yts: ["WjEVeO5bq0U"],
-                       srcs: ["https://clips.example.com/k4zf_m1.mp4",
-                              "https://clips.example.com/k4zf_m3.mp4"] }
+                       srcs: ["", ""] }
       ]
     },
     /* Was EMBR-CC-00175 (Cognitive Challenges in Huntington's Disease), swapped
@@ -120,11 +116,9 @@ window.STUDY_CONFIG = {
       id: "P5", cc: "EMBR-CC-00254", enabled: true,
       versions: [
         { key: "k7cy", yts: ["pe3snqlh_zY"],
-                       srcs: ["https://clips.example.com/k7cy_m1.mp4",
-                              "https://clips.example.com/k7cy_m3.mp4"] },
+                       srcs: ["", ""] },
         { key: "k0lg", yts: ["yE06txRZaNQ"],
-                       srcs: ["https://clips.example.com/k0lg_m1.mp4",
-                              "https://clips.example.com/k0lg_m3.mp4"] }
+                       srcs: ["", ""] }
       ]
     }
   ]
