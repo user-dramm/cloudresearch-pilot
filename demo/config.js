@@ -51,39 +51,33 @@ window.STUDY_CONFIG = {
   minWhyChars: 80,
 
   demoBanner:
-    "<strong>Preview, not the real study.</strong> You are looking at the rater " +
-    "instrument so you can review the questions, the wording and the flow. Three " +
-    "differences from the live version: each video unlocks after about " +
-    "<strong>5%</strong> of it has played rather than 90%, so the whole thing takes " +
-    "a couple of minutes; the two videos in a set are unrelated stand-ins, so the " +
-    "“which set was better” answer is meaningless here; and the code-word " +
-    "question is optional, because the code word appears halfway through a video you " +
-    "will not have watched that far into. Everything else — the watch gate, the " +
-    "skip-blocking, the questions, the conditional follow-ups — is exactly what a " +
-    "paid rater will get. Your answers are tagged as a preview and are excluded " +
-    "from the analysis automatically.",
+    "<strong>Preview, not the real study.</strong> This is the rater instrument, so " +
+    "you can review the questions, the wording and the flow. What to ignore: each " +
+    "video unlocks after about <strong>5%</strong> has played rather than 90%, so " +
+    "this takes a couple of minutes instead of 25; the two videos are unrelated " +
+    "stand-ins rather than two versions of one course, so “which was better” " +
+    "is meaningless here; the code-word question is optional because you will not " +
+    "watch far enough in to see one; and the real videos run in two parts with a " +
+    "short black pause, which these stand-ins do not. Everything else — the watch " +
+    "gate, the skip-blocking, the questions and the follow-ups — is exactly what a " +
+    "paid rater gets. Your answers are tagged as a preview and excluded from the " +
+    "analysis automatically.",
 
-  /* Real uploads, but NOT a real pair. Both sets below are the CURRENT build of
-     two DIFFERENT courses (00158 and 00162), because at the time this was wired up
-     no course had both of its sides uploaded. So the "which set was better"
-     question compares unrelated material and its answer is meaningless.
+  /* ONE video per section, matching the real structure: each side is a single
+     player, not two. These are stand-ins - two unrelated courses, and single modules
+     rather than the joined two-part files - because the joined videos are not
+     uploaded yet. So "which was better" is meaningless here.
 
-     Everything else is the genuine article: real videos, real durations, real code
-     words burned in at 45% of each second video, the real watch gate, the real
-     question set and the real conditional follow-ups.
-
-     Code words a reviewer will actually see:
-       set 1 (k2wj, 00158 module 3) -> juniper
-       set 2 (k8rn, 00162 module 3) -> kettle
-
-     Order inside a set matters: module 1 first, then module 3, which is the one
-     carrying the code word. */
+     What IS real: the watch gate, the skip-rewind, captions forced off, the four
+     labelled rating scales, the optional open question, the speaker question and its
+     conditional probe, and the whole end block. Those are what a reviewer should be
+     looking at. */
   pairs: [
     {
       id: "P2", cc: "DEMO", enabled: true,
       versions: [
-        { key: "k2wj", yts: ["elN8cuwcDSE", "dlRP9lEVEgY"] },
-        { key: "k8rn", yts: ["qHwWmi8mugA", "zDVyC079umo"] }
+        { key: "k2wj", yts: ["dlRP9lEVEgY"] },
+        { key: "k8rn", yts: ["zDVyC079umo"] }
       ]
     }
   ]
