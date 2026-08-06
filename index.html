@@ -158,6 +158,11 @@
          reviewer who thinks they are seeing the real study would give feedback on
          the wrong thing. Absent for the real study. -->
     <div id="demo-banner" class="demo-banner hidden"></div>
+    <!-- Shown from first paint until assignment returns. Boot has to await the
+         endpoint before it can render the videos, and that call has been measured at
+         anything from 2 to 33 seconds. Without this the page just sits there looking
+         broken, and a rater who waits 30 seconds on a dead page returns the task. -->
+    <div id="booting" class="note">Setting up your videos — one moment.</div>
     <!-- Shown only when a session was restored. Worth telling them: someone who does
          not realise their progress came back will start over unnecessarily. -->
     <div id="resume-note" class="note hidden">
@@ -167,7 +172,7 @@
     <div class="rail" id="rail"></div>
 
     <!-- ================= 0. intro ================= -->
-    <section id="s-intro" class="screen">
+    <section id="s-intro" class="screen hidden">
       <div class="card">
         <p class="eyebrow">Before you start</p>
         <h1>Watch two short training videos and tell us what you think</h1>
@@ -331,6 +336,20 @@ function assignLocal(){
    short about 61% of the time at n=35; this keeps the cells even without anyone
    watching them. If the call fails for any reason we fall back to the local hash, so a
    flaky network costs balance rather than the session. */
+/* fetch() has no timeout of its own: a connection that stalls stalls forever. The
+   assign endpoint was measured at 32.9 SECONDS on one call and 2 seconds on the next,
+   so this is not hypothetical - without a deadline a rater can sit on a dead-looking
+   page indefinitely and return the task. Every network call now gets one. */
+async function fetchDeadline(url, opts, ms){
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    return await fetch(url, Object.assign({}, opts || {}, { signal: ctl.signal }));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function assign(){
   if (!live.length) return false;
 
@@ -362,7 +381,12 @@ async function assign(){
      (`repeat: true`), so a retry cannot consume a second slot. */
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const r = await fetch(q);
+      /* 6 seconds per attempt. The endpoint answers in about 2 seconds when healthy;
+         anything slower is better abandoned and retried than waited on, because the
+         rater is staring at a page that has not rendered yet. Three attempts plus
+         backoff caps the wait at roughly 20 seconds, after which the local fallback
+         assigns them and the row records assign_source so it is visible in the data. */
+      const r = await fetchDeadline(q, {}, 6000);
       const j = await r.json();
       const p = j && j.ok && live.find(x => x.id === j.pair);
       if (p) { setPair(p, Number(j.nth) || 0, j.repeat ? "server-repeat" : "server"); return true; }
@@ -1352,7 +1376,11 @@ async function submit(){
     try {
       // text/plain keeps this a "simple" CORS request — no preflight, which
       // Apps Script cannot answer.
-      const r = await fetch(CFG.endpoint, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body, redirect:"follow" });
+      /* 20 seconds here, not 6. A slow assign costs a few seconds of waiting; a lost
+         submit costs a rater their payment and us the data, so it is worth waiting
+         out a slow write. Still bounded - a hang would otherwise leave the button
+         saying "Saving..." forever with no way forward. */
+      const r = await fetchDeadline(CFG.endpoint, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body, redirect:"follow" }, 20000);
       const j = await r.json();
       if (j && j.ok) return j;
     } catch (e) { /* retry */ }
@@ -1402,6 +1430,7 @@ $("#btn-retry").addEventListener("click", async () => {
 /* ---------- boot ---------- */
 (async function boot(){
   if (!(await assign())) {
+    const bn = $("#booting"); if (bn) bn.classList.add("hidden");
     /* Two different audiences see this. A paid rater must be told to return the
        task so they are not left stuck; a colleague reviewing a preview build needs
        to know the videos simply have not been filled in yet, or they will report
@@ -1428,6 +1457,9 @@ $("#btn-retry").addEventListener("click", async () => {
   if (needsPid) { $("#btn-start").disabled = true; }
   buildVersionScreen(1); buildVersionScreen(2);
   H2H.forEach(s => renderQ(s, "", $("#h2h-qs")));
+  /* Assignment is in; the page can render. */
+  const boot_note = $("#booting");
+  if (boot_note) boot_note.classList.add("hidden");
   $("#btn-start").addEventListener("click", () => go(1));
 
   /* Resume, if this browser has unfinished work for this pair. Screens are rebuilt
