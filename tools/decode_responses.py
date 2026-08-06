@@ -115,7 +115,8 @@ def main():
             # away most of the sample. The text gate is on h2h_why, further down.
             comment = (r.get("s%s_comment" % s) or "").strip()
 
-            lines.append("  position %s  =  %-18s  key %s   %s videos" % (s, label, k, nvid))
+            lines.append("  position %s  =  %-18s  key %s   %s video%s"
+                         % (s, label, k, nvid, "" if str(nvid) == "1" else "s"))
             lines.append("      watched %.0f%% of %.0fs   seeks fwd %s   max speed %.2fx"
                          % (pct, dur, r.get("s%s_seek_fwd" % s, "?"), rate))
             lines.append("      code word: %s" % cw)

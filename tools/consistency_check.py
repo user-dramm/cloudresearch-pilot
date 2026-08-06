@@ -42,10 +42,20 @@ def form_ids():
 opts = form_opts("h2h_choice")
 note(opts == ["The first video", "The second video"],
      "h2h_choice options", str(opts))
-m = re.search(r'D\.h2h_choice_slot = D\.h2h_choice === "([^"]+)"', form)
-note(m and opts and m.group(1) == opts[0],
-     "payload() slot test matches the first option",
-     "tests %r, option is %r" % (m.group(1) if m else None, opts[0] if opts else None))
+# payload() derives the slot from the option's INDEX, so the array it indexes
+# must match the question's options exactly AND in the same order. Reverse the
+# order and every clause in the analysis flips direction silently.
+m = re.search(r'const H2H_OPTS = \[(.*?)\];', form, re.S)
+payload_opts = ([x.strip().strip('"') for x in m.group(1).split(",")]
+                if m else None)
+note(payload_opts is not None and payload_opts == opts,
+     "payload() indexes the same options, in the same order",
+     "payload %r vs question %r" % (payload_opts, opts))
+# A missing choice must blank the derived fields, never default to a slot. It
+# defaulted to 2 until 2026-08-06, which corrupted the win count directionally.
+note(re.search(r'chosen === -1\s*\)\s*\{[^}]*h2h_choice_slot = ""', form)
+     is not None,
+     "no-match choice blanks the slot rather than defaulting")
 note(gen.count('"The first video"') >= 1 and gen.count('"The second video"') >= 1,
      "generator uses the same choice strings")
 

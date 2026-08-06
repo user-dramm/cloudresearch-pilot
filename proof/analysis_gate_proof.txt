@@ -1,20 +1,10 @@
-PROOF THAT THE ANALYSIS GATE IS NOT RIGGED
-Generated 2026-08-06T18:52:03Z   form_version 1.4.0
+PRE-REGISTERED CRITERION - GATE PROOF
+Regenerated 2026-08-06 against the shipped instrument (form 1.4.x, 43/43 consistency checks).
+The point: the analysis can return NOT VALIDATED. A gate that always passes proves nothing.
 
-One script, two runs: synthetic data with a real effect, and synthetic data
-with none. A gate that prints VALIDATED means nothing until you have watched
-it print NOT VALIDATED on data where nothing is there.
-
-The win run uses --seed 1. Seed 7 at the same true preference produced 22 of 35
-and FAILED clause 2 - a genuine 2% tail draw, not a bug, and a useful reminder
-that this criterion can miss a real effect. See tools/power.py: at 35
-completions clause 2 detects a true 80% preference 97% of the time but a true
-70% preference only 65% of the time.
-
-########################################################################
-# RUN 1   --true-pref 0.80 --seed 1        expected: VALIDATED
-########################################################################
-wrote 35 synthetic rows to /tmp/win.csv (true preference for new = 0.80)
+--------------------------------------------------------------------
+RUN 1 - synthetic data where the new version is genuinely preferred (true pref 80%)
+--------------------------------------------------------------------
 ==========================================================================
 EMBRACE CLOUDRESEARCH PILOT - ANALYSIS
 ==========================================================================
@@ -25,10 +15,10 @@ excluded            0
 --------------------------------------------------------------------------
 CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
 --------------------------------------------------------------------------
-  P1    new  4 : 3  old   new ahead
-  P2    new  7 : 0  old   new ahead
+  P1    new  7 : 0  old   new ahead
+  P2    new  6 : 1  old   new ahead
   P3    new  6 : 1  old   new ahead
-  P4    new  6 : 1  old   new ahead
+  P4    new  7 : 0  old   new ahead
   P5    new  6 : 1  old   new ahead
 
   pairs where new leads: 5 of 5
@@ -36,51 +26,53 @@ CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
 --------------------------------------------------------------------------
 CLAUSE 2 - pooled preference (need >= 65%% AND exact binomial p < .05)
 --------------------------------------------------------------------------
-  new preferred in 29 of 35 paired votes = 82.9%
-  exact binomial vs 50%:  two-sided p = 0.0001   one-sided p = 0.0001
+  new preferred in 32 of 35 paired votes = 91.4%
+  exact binomial vs 50%:  two-sided p = 0.0000   one-sided p = 0.0000
   the locked criterion reads two-sided; at n=35 both clauses hold from 24 wins up
 
 --------------------------------------------------------------------------
 CLAUSE 3 - mean 'overall' score (need new - old >= 0.50)
 --------------------------------------------------------------------------
-  overall   old 3.20   new 4.09   delta +0.89
-  voice     old 3.51   new 4.34   delta +0.83
-  on-screen old 3.34   new 4.17   delta +0.83
-  clarity   old 2.74   new 4.00   delta +1.26
+  overall   old 2.77   new 3.77   delta +1.00
+  voice     old 3.23   new 4.06   delta +0.83
+  on-screen old 3.31   new 4.06   delta +0.74
+  clarity   old 2.94   new 3.80   delta +0.86
 
-  within-rater overall delta: mean +0.89  sd 1.21  n 35
+  within-rater overall delta: mean +1.00  sd 1.21  n 35
   within-rater is the number that matters - each rater is their own control
 
 --------------------------------------------------------------------------
 DIAGNOSTICS (context, not part of the criterion)
 --------------------------------------------------------------------------
-  position effect     first-shown video won 18 of 35 (51%) - near 50% means order is not driving the result
-  old narration rated 1-2 by 2/35 (6%)   described as artificial in their own words 2/35 (6%)
+  position effect     first-shown video won 17 of 35 (49%) - near 50% means order is not driving the result
+  old narration rated 1-2 by 5/35 (14%)   described as artificial in their own words 4/35 (11%)
   new narration rated 1-2 by 0/35 (0%)   described as artificial in their own words 0/35 (0%)
       the second figure is fully unprompted - nothing in the form mentions AI,
       synthetic voices or anything like it, so those are words raters chose
   old on the narration, verbatim:
         "Very monotone."
         "It sounded robotic to me."
+        "Very monotone."
+        "The pauses were in odd places."
+        "Very monotone."
   straightlining      0/35 (0%) gave all four ratings identical on BOTH videos
-  preference size:    Slightly better 14,  Clearly better 9,  Much better 12
-  would train a coworker with their pick:  No 4,  Yes, no reservations 17,  Yes, with some reservations 14
-  mean within-pair rater agreement: 83% (50% = coin flip, 100% = unanimous)
+  preference size:    Slightly better 10,  Clearly better 16,  Much better 9
+  would train a coworker with their pick:  No 1,  Yes, no reservations 17,  Yes, with some reservations 17
+  mean within-pair rater agreement: 91% (50% = coin flip, 100% = unanimous)
 
 ==========================================================================
 PRE-REGISTERED CRITERION
 ==========================================================================
   [PASS]  new ahead in >= 4 of 5 pairs        (5 of 5)
-  [PASS]  pooled pref >= 65% and p < .05      (82.9%, p = 0.0001)
-  [PASS]  overall delta >= +0.50              (+0.89)
+  [PASS]  pooled pref >= 65% and p < .05      (91.4%, p = 0.0000)
+  [PASS]  overall delta >= +0.50              (+1.00)
 --------------------------------------------------------------------------
   VERDICT: VALIDATED - all three clauses must hold
 ==========================================================================
 
-########################################################################
-# RUN 2   --true-pref 0.50 --seed 3       expected: NOT VALIDATED
-########################################################################
-wrote 35 synthetic rows to /tmp/null.csv (true preference for new = 0.50)
+--------------------------------------------------------------------
+RUN 2 - synthetic data with NO real difference (true pref 50%, a coin flip)
+--------------------------------------------------------------------
 ==========================================================================
 EMBRACE CLOUDRESEARCH PILOT - ANALYSIS
 ==========================================================================
@@ -157,9 +149,82 @@ PRE-REGISTERED CRITERION
   VERDICT: NOT VALIDATED - all three clauses must hold
 ==========================================================================
 
-########################################################################
-# POWER
-########################################################################
+--------------------------------------------------------------------
+RUN 3 - every free-text box blank, ratings unchanged from RUN 1
+Confirms no text-length gate can silently exclude a whole cohort.
+--------------------------------------------------------------------
+==========================================================================
+EMBRACE CLOUDRESEARCH PILOT - ANALYSIS
+==========================================================================
+rows in export      35
+passed quality gate 35
+excluded            0
+
+--------------------------------------------------------------------------
+CLAUSE 1 - head-to-head by pair (need new ahead in >= 4 of 5)
+--------------------------------------------------------------------------
+  P1    new  7 : 0  old   new ahead
+  P2    new  6 : 1  old   new ahead
+  P3    new  6 : 1  old   new ahead
+  P4    new  7 : 0  old   new ahead
+  P5    new  6 : 1  old   new ahead
+
+  pairs where new leads: 5 of 5
+
+--------------------------------------------------------------------------
+CLAUSE 2 - pooled preference (need >= 65%% AND exact binomial p < .05)
+--------------------------------------------------------------------------
+  new preferred in 32 of 35 paired votes = 91.4%
+  exact binomial vs 50%:  two-sided p = 0.0000   one-sided p = 0.0000
+  the locked criterion reads two-sided; at n=35 both clauses hold from 24 wins up
+
+--------------------------------------------------------------------------
+CLAUSE 3 - mean 'overall' score (need new - old >= 0.50)
+--------------------------------------------------------------------------
+  overall   old 2.77   new 3.77   delta +1.00
+  voice     old 3.23   new 4.06   delta +0.83
+  on-screen old 3.31   new 4.06   delta +0.74
+  clarity   old 2.94   new 3.80   delta +0.86
+
+  within-rater overall delta: mean +1.00  sd 1.21  n 35
+  within-rater is the number that matters - each rater is their own control
+
+--------------------------------------------------------------------------
+DIAGNOSTICS (context, not part of the criterion)
+--------------------------------------------------------------------------
+  position effect     first-shown video won 17 of 35 (49%) - near 50% means order is not driving the result
+  old narration rated 1-2 by 5/35 (14%)   described as artificial in their own words 0/35 (0%)
+  new narration rated 1-2 by 0/35 (0%)   described as artificial in their own words 0/35 (0%)
+      the second figure is fully unprompted - nothing in the form mentions AI,
+      synthetic voices or anything like it, so those are words raters chose
+  straightlining      0/35 (0%) gave all four ratings identical on BOTH videos
+  preference size:    Slightly better 10,  Clearly better 16,  Much better 9
+  would train a coworker with their pick:  No 1,  Yes, no reservations 17,  Yes, with some reservations 17
+  mean within-pair rater agreement: 91% (50% = coin flip, 100% = unanimous)
+
+==========================================================================
+PRE-REGISTERED CRITERION
+==========================================================================
+  [PASS]  new ahead in >= 4 of 5 pairs        (5 of 5)
+  [PASS]  pooled pref >= 65% and p < .05      (91.4%, p = 0.0000)
+  [PASS]  overall delta >= +0.50              (+1.00)
+--------------------------------------------------------------------------
+  VERDICT: VALIDATED - all three clauses must hold
+==========================================================================
+
+--------------------------------------------------------------------
+ATTRIBUTION - ratings and votes land on the right version in BOTH orders
+--------------------------------------------------------------------
+  pair P1:  k9vm = old   k3ta = new
+  expected: overall   old 2.00   new 5.00   delta +3.00
+  actual:   overall   old 2.00   new 5.00   delta +3.00
+  votes:    new preferred in 2 of 2 paired votes = 100.0%
+
+  PASS - ratings and votes attribute to the right version in both orders
+
+--------------------------------------------------------------------
+POWER at the 35-completion budget
+--------------------------------------------------------------------
 ==============================================================================
 POWER OF CLAUSE 2   (pooled preference >= 65% AND two-sided p < .05)
 ==============================================================================

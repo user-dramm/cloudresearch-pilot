@@ -19,12 +19,10 @@
      demoBanner   a visible notice on every screen. A reviewer who believes they
                   are seeing the real study gives feedback on the wrong thing.
 
-     videos       THROWAWAY uploads. Delete them before the real study's upload
-                  session. The real twelve must all be uploaded together in one
-                  sitting, because upload dates are the classic way a blind study
-                  leaks: if some clips are from today and some from last month, a
-                  curious rater can work out which version is older. Reusing these
-                  demo uploads in the study would break that.
+     videos       the REAL joined uploads, two of them, so a reviewer sees exactly
+                  what a rater sees. They are two DIFFERENT courses rather than two
+                  versions of one, so "which was better" means nothing here. Both are
+                  the current build, so nothing about old-vs-new is on display either.
 
    The completion code is blanked: nothing here should hand out a payable code.
    ============================================================================ */
@@ -54,30 +52,29 @@ window.STUDY_CONFIG = {
     "<strong>Preview, not the real study.</strong> This is the rater instrument, so " +
     "you can review the questions, the wording and the flow. What to ignore: each " +
     "video unlocks after about <strong>5%</strong> has played rather than 90%, so " +
-    "this takes a couple of minutes instead of 25; the two videos are unrelated " +
-    "stand-ins rather than two versions of one course, so “which was better” " +
-    "is meaningless here; the code-word question is optional because you will not " +
-    "watch far enough in to see one; and the real videos run in two parts with a " +
-    "short black pause, which these stand-ins do not. Everything else — the watch " +
-    "gate, the skip-blocking, the questions and the follow-ups — is exactly what a " +
-    "paid rater gets. Your answers are tagged as a preview and excluded from the " +
-    "analysis automatically.",
+    "this takes a couple of minutes instead of 25; the two videos are from " +
+    "different courses rather than two versions of one, so “which was better” " +
+    "is meaningless here; and the code-word question is optional, because you will " +
+    "not watch far enough in to see one. Everything else is exactly what a paid " +
+    "rater gets — the same videos, the watch gate, the skip-blocking, the black " +
+    "“Part 2” pause halfway through each video, and every question. Your " +
+    "answers are tagged as a preview and excluded from the analysis automatically.",
 
-  /* ONE video per section, matching the real structure: each side is a single
-     player, not two. These are stand-ins - two unrelated courses, and single modules
-     rather than the joined two-part files - because the joined videos are not
-     uploaded yet. So "which was better" is meaningless here.
+  /* The REAL joined videos now, so a reviewer sees exactly what a rater sees: one
+     player per section, each running module 1, a black "Part 2" pause, then module 3.
+     Still stand-ins in one respect - these are two DIFFERENT courses rather than two
+     versions of one - so "which was better" remains meaningless here. Both happen to
+     be the current build, which also means nothing about old-vs-new is on display.
 
-     What IS real: the watch gate, the skip-rewind, captions forced off, the four
-     labelled rating scales, the optional open question, the speaker question and its
-     conditional probe, and the whole end block. Those are what a reviewer should be
-     looking at. */
+     What IS real: the videos themselves, the watch gate, the skip-rewind, captions
+     forced off, the code word box under the player, the four labelled rating scales,
+     the conditional narration follow-up, and the whole end block. */
   pairs: [
     {
       id: "P2", cc: "DEMO", enabled: true,
       versions: [
-        { key: "k2wj", yts: ["dlRP9lEVEgY"] },
-        { key: "k8rn", yts: ["zDVyC079umo"] }
+        { key: "k2wj", yts: ["Umcwa2hOGyY"] },
+        { key: "k8rn", yts: ["EmbyxGru4u4"] }
       ]
     }
   ]

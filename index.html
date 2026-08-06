@@ -1143,10 +1143,17 @@ function paintGate(slot, i){
     $("#gate-msg" + vk(slot, i)).textContent = rest
       ? "Done with this one — " + (rest === 1 ? "one more to watch" : rest + " more to watch")
       : "Thanks for watching";
-    /* Hand over to the next video in the sequence. Pause this one first so it is
-       not still running underneath while the rater starts the next. */
-    try { players[vk(slot, i)].pauseVideo(); } catch(e){}
-    revealNext(slot, i);
+    /* Hand over to the next video in the sequence, pausing this one first so it is
+       not still running underneath while the rater starts the next.
+       ONLY when there IS a next one. A section is normally a single joined video, and
+       pausing it the instant the gate opened stopped playback at 90% on its own - the
+       rater is left staring at a paused video that looks like it ended, with a tenth
+       of it unwatched. Nothing requires them to finish, but nothing should stop them
+       either. */
+    if (i + 1 < sect.vids.length) {
+      try { players[vk(slot, i)].pauseVideo(); } catch(e){}
+      revealNext(slot, i);
+    }
   }
 
   /* The section unlocks only when EVERY video in it has cleared the gate on its
@@ -1358,10 +1365,26 @@ function payload(){
        was meant to serve rather than assumed. */
     D["s" + s + "_video_count"]  = vids.length;
   });
-  /* Must match the h2h_choice option strings exactly. "The first video" names the
-     first SECTION - one version of the course, played as one video in two parts. */
-  D.h2h_choice_slot = D.h2h_choice === "The first video" ? 1 : 2;
-  D.h2h_choice_key  = SLOTS[D.h2h_choice_slot - 1].key;
+  /* Derive the chosen slot by matching the option strings EXACTLY, and record nothing
+     if it matches neither.
+
+     This used to read `D.h2h_choice === "The first video" ? 1 : 2`, which silently
+     defaults to 2 whenever the field is missing or reworded - so a row with no choice
+     would have been recorded as "preferred the second video", in the one field clauses
+     1 and 2 are computed from. Directional corruption, invisible in the data.
+     validate() does block submission without a choice, so this should never fire; a
+     default that quietly picks a side is still the wrong default. An empty
+     h2h_choice_key is dropped by analysis.py with a reason, which is the correct
+     outcome for a row we cannot interpret. */
+  const H2H_OPTS = ["The first video", "The second video"];
+  const chosen = H2H_OPTS.indexOf(D.h2h_choice);
+  if (chosen === -1) {
+    D.h2h_choice_slot = "";
+    D.h2h_choice_key  = "";
+  } else {
+    D.h2h_choice_slot = chosen + 1;
+    D.h2h_choice_key  = SLOTS[chosen].key;
+  }
   D.video_source = CFG.videoSource;
   /* Includes time from earlier visits, or a resumed session looks impossibly
      short and analysis.py rejects an honest rater for having recovered. */
