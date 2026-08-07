@@ -77,6 +77,11 @@
     border:1px solid var(--rule);border-radius:var(--r);background:var(--card);font-size:14px
   }
   .gate.open{border-color:#c6ddd0;background:var(--ok-soft);color:var(--ok)}
+  /* The speed-reset notice. Deliberately not red: nothing has gone wrong and the rater
+     has done nothing they need to feel caught at. It just has to be noticed. */
+  #gate-msg1_0.warn,#gate-msg1_1.warn,#gate-msg2_0.warn,#gate-msg2_1.warn{
+    color:#8a5a00;font-weight:600
+  }
   .bar{flex:1;height:5px;background:var(--rule);border-radius:3px;overflow:hidden}
   .bar span{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
   .gate.open .bar span{background:var(--ok)}
@@ -197,7 +202,7 @@
         <ul>
           <li>Plan for roughly 25 minutes altogether, in one sitting.</li>
           <li>Each video runs in <strong>two parts with a short black pause between them</strong>. Keep watching when the screen goes dark. It says "Part 2" and carries on.</li>
-          <li>The questions unlock once a video has actually played through. Jumping ahead won't work: the player rewinds you to where you got to.</li>
+          <li>The questions unlock once a video has actually played through. Jumping ahead won't work, because the player rewinds you to where you got to, and <strong>neither will speeding it up</strong>: the timer counts real minutes, not how much of the video has gone by, and the speed resets itself to normal. Plan for the full time.</li>
           <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. There's a box right under the video, so type it in as soon as you see it and you don't have to remember it.</li>
           <li>After each video there are <strong>four quick questions</strong>. The writing, if you want to do any, is all at the end.</li>
           <li id="li-resume">Your progress is saved as you go. If your browser closes or you lose power, reopen this same link and you'll carry on from where you stopped, without having to rewatch.</li>
@@ -271,7 +276,7 @@
    Bump FORM_VERSION on every change that could affect the data, and tag the
    commit with the same string. That pairing is the audit trail.
    =========================================================================== */
-const FORM_VERSION = "1.8.0";
+const FORM_VERSION = "1.9.0";
 
 const CFG = window.STUDY_CONFIG;
 
@@ -489,7 +494,7 @@ const watch = { 1:blankSection(), 2:blankSection() };
 /* `furthest` is the deepest point genuinely reached by playing, which is what a
    forward seek gets rewound to. It is NOT the same as `watched`: someone who watches
    the first two minutes twice has watched 4 minutes but only reached 2. */
-function blankVid(){ return { watched:0, duration:0, seekFwd:0, seekBack:0, errors:0, last:null, maxRate:1, open:false, wasPlaying:false, furthest:0 }; }
+function blankVid(){ return { watched:0, duration:0, seekFwd:0, seekBack:0, errors:0, last:null, maxRate:1, open:false, wasPlaying:false, furthest:0, warnedRate:false }; }
 function blankSection(){ return { open:false, enter:0, vids:[] }; }
 /* DOM ids and player keys for one video: section 1's first video is "1_0". */
 function vk(slot, i){ return slot + "_" + i; }
@@ -895,7 +900,7 @@ function sec_html(slot, count, many, frames){
        ? `This first set has ${count} videos from the same course. Watch them both, then the questions below unlock. A code word appears on screen during the second one, and we ask for it afterwards.`
        : `This second set is ${count} videos from a different version of the course. Same as before: watch both, then the questions unlock. There is a different code word in the second one.`)
     : (first
-       ? "This video comes in two parts with a short black pause between them. Keep watching, it hasn't ended. A code word appears on screen during the second part: type it in the box below as soon as you see it. Once the video has played through, four quick questions unlock underneath."
+       ? "This video plays at normal speed and takes the full time it says. This one comes in two parts with a short black pause between them. Keep watching, it hasn't ended. A code word appears on screen during the second part: type it in the box below as soon as you see it. Once the video has played through, four quick questions unlock underneath."
        : "Same as before: two parts with a pause between them, a code word in the second part, then four quick questions.");
 
   $("#s-v" + slot).innerHTML = `
@@ -1086,6 +1091,30 @@ function mountFile(slot, i, src){
 }
 
 /* --- unlisted youtube --- */
+/* CAPTIONS OFF, AND KEEP THEM OFF.
+
+   Every video already carries captions BURNED INTO THE PICTURE. So YouTube's own caption
+   layer on top does not merely duplicate the words, it prints a second, differently
+   wrapped block over the first and the result is unreadable. A rater would score that,
+   and it comes from a player setting rather than from anything the pipeline did. If it
+   lands on one side of a pair and not the other, it biases the comparison directly.
+
+   Three mechanisms, because none is sufficient alone:
+     cc_load_policy:0   asks the player not to turn captions on. Ignored for a viewer
+                        whose YouTube account defaults captions to on.
+     unloadModule       actually removes the module, but only for as long as it stays
+                        removed - the player can load it again after onReady.
+     setOption track {} explicitly selects NO track, which survives the module reloading.
+
+   Called from onReady AND onStateChange, so a module that appears later is torn down
+   again. Every call is wrapped: unloading something absent throws on some builds. */
+function killCaptions(pl){
+  ["captions", "cc"].forEach(m => {
+    try { pl.unloadModule(m); } catch (_) {}
+    try { pl.setOption(m, "track", {}); } catch (_) {}
+  });
+}
+
 function mountYouTube(slot, i, videoId){
   /* mountOne already queued this if the API was not ready, so reaching here with
      YT undefined would be a programming error rather than a load failure. */
@@ -1102,13 +1131,17 @@ function mountYouTube(slot, i, videoId){
     playerVars: { rel:0, modestbranding:1, playsinline:1, disablekb:0, cc_load_policy:0 },
     events: {
       onReady: e => {
-        /* Actually switch captions off, rather than hoping the default holds. Both
-           module names are tried: the modern player uses "captions", older builds
-           used "cc", and unloading a module that is not present is harmless. */
-        ["captions", "cc"].forEach(m => { try { e.target.unloadModule(m); } catch (_) {} });
+        killCaptions(e.target);
         watch[slot].vids[i].duration = e.target.getDuration() || 0;
         paintGate(slot, i);
       },
+      /* Again on every state change. Doing it ONCE at onReady is not enough, and that
+         is not theoretical: screenshotting all ten uploads with the old one-shot version
+         showed the archive side clean but the recreation side carrying TWO overlapping
+         caption layers, the burned-in one plus YouTube's own. The captions module can
+         load after onReady has already fired, so a single unload races it and loses on
+         some videos and not others. */
+      onStateChange: e => killCaptions(e.target),
       onError: () => loadFail(slot, i,
         "This video failed to load. Please refresh the page once; if it still fails, return the task.")
     }
@@ -1163,6 +1196,42 @@ setInterval(() => {
           w.watched = Math.min(w.duration || Infinity, w.watched + Math.min(d, wall));
           if (wall > 0.05) w.maxRate = Math.max(w.maxRate, +(d / wall).toFixed(2));
           if (t > w.furthest) w.furthest = t;      // the deepest point genuinely reached
+        }
+
+        /* PUT THE SPEED BACK TO NORMAL, and say why.
+
+           Capping credit at real elapsed time already means 2x buys nothing: the gate
+           costs the same number of real minutes however fast the video is set to play.
+           So this is not an anti-cheat measure, it is an anti-CONFUSION one. Left alone,
+           someone at 2x watches the bar advance at half the pace they expect, concludes
+           the page is broken, and either messages you or abandons a session you have
+           paid for. Telling them plainly is cheaper than either.
+
+           Read from the player rather than inferred from the tick, so a rate set before
+           playback starts is caught too. The note appears once per video, not on every
+           poll, or it would flicker. */
+        if (p.getPlaybackRate && p.setPlaybackRate) {
+          try {
+            if (p.getPlaybackRate() !== 1) {
+              p.setPlaybackRate(1);
+              if (!w.warnedRate) {
+                w.warnedRate = true;
+                const msg = $("#gate-msg" + vk(slot, i));
+                if (msg) {
+                  msg.textContent = "Speed is back to normal. Playing faster will not "
+                    + "unlock the questions any sooner, because the timer counts real "
+                    + "minutes rather than how much of the video has gone by.";
+                  msg.classList.add("warn");
+                  setTimeout(() => {
+                    msg.classList.remove("warn");
+                    msg.textContent = sect.vids.length > 1
+                      ? "The next video unlocks once this one has played"
+                      : "Questions unlock as this video plays";
+                  }, 9000);
+                }
+              }
+            }
+          } catch (_) {}
         }
         if (d >= 1.6) {
           w.seekFwd++;

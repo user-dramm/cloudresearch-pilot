@@ -46,6 +46,7 @@ run "device gating"      node tools/test_devices.js
 run "interaction"        node tools/test_interaction.js
 run "submit failure"     node tools/test_submit_failure.js
 run "anti-cheat"         node tools/test_anticheat.js
+run "playback speed"     node tools/test_speed.js
 
 echo
 if [ "$fail" -eq 0 ]; then
