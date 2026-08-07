@@ -55,11 +55,24 @@ def main():
     rows = list(csv.DictReader(open(a.csv)))
 
     cards, kept, dropped = [], [], []
+    seen_pid = set()
     for r in rows:
         tag = (r.get("study_tag") or "").strip()
         if (r.get("is_selftest") or "").lower() in ("yes", "true", "1"):
             dropped.append((r.get("participant_id"), "selftest row"))
             continue
+        # ONE ROW PER PARTICIPANT, keeping the first. This page counted every row as its
+        # own rater until 2026-08-07, so a rater who submitted twice was counted twice and
+        # the headline and the means were both inflated. That is not a contrived case: the
+        # submit path retries, so a submission that reached the Sheet but whose response
+        # was lost produces a second identical row. analysis.py has always dropped these;
+        # the two now agree on the same export, which is the point of having both.
+        pid_now = (r.get("participant_id") or "").strip()
+        if pid_now and pid_now in seen_pid:
+            dropped.append((pid_now, "duplicate participant, an earlier row is already counted"))
+            continue
+        if pid_now:
+            seen_pid.add(pid_now)
         if tag and tag != a.study_tag:
             dropped.append((r.get("participant_id"), "study tag %r, not this study" % tag))
             continue

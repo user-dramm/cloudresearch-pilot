@@ -115,6 +115,16 @@ rows = [
 ]
 rows[7]["h2h_choice_key"] = ""; rows[7]["h2h_choice_slot"] = ""; rows[7]["h2h_choice"] = ""
 
+# One honest rater who submitted TWICE. The submit path retries, so a submission that
+# reached the Sheet but whose response was lost produces a second identical row. The page
+# counted every row as its own rater until 2026-08-07, which inflated both the headline and
+# the means, while analysis.py had always dropped the extra - so the two disagreed on the
+# same export. Both L rows carry the same participant_id.
+dup_a = row("L_DOUBLESUBMIT", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, prefers="new")
+dup_b = row("L_DOUBLESUBMIT", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, prefers="new")
+dup_b["row_id"] = "L_DOUBLESUBMIT_RETRY"
+rows += [dup_a, dup_b]
+
 tmp = tempfile.mkdtemp()
 csvp = os.path.join(tmp, "t.csv"); outp = os.path.join(tmp, "r.html")
 with open(csvp, "w", newline="") as f:
@@ -172,20 +182,27 @@ check("I_SELFTEST" not in doc.split('<h2>Not counted</h2>')[0].split('<h2>Every 
 check("selftest" in doc, "selftest row listed under Not counted")
 check("study tag" in doc and "demo-2026-08" in doc, "wrong-study-tag row listed with its tag")
 
-# 7. The headline counts CLEAN rows only: 4 clean (A,B,C,D), 2 preferring the recreation.
+# 6b. A rater who submitted twice counts ONCE.
+dup_cards = doc.count('<span class="pid">L_DOUBLESUBMIT<')
+check(dup_cards == 1, "a double submission produces ONE card, not two",
+      "found %d" % dup_cards)
+check("duplicate participant" in doc, "the extra submission is listed as a duplicate")
+
+# 7. The headline counts CLEAN rows only: 5 clean (A,B,C,D + one L), 3 preferring new.
 m = re.search(r'<span class="big">(\d+) of (\d+)</span>', doc)
 check(bool(m), "headline present")
 if m:
-    check(m.group(2) == "4", "headline denominator counts only clean rows", "got %s" % m.group(2))
-    check(m.group(1) == "2", "headline numerator counts recreation wins", "got %s" % m.group(1))
+    check(m.group(2) == "5", "headline denominator counts only clean rows, deduped",
+          "got %s" % m.group(2))
+    check(m.group(1) == "3", "headline numerator counts recreation wins", "got %s" % m.group(1))
 
 # 8. Mean table uses version, not position: recreation overall (5+5+2+2)/4 = 3.50,
 #    archive (1+1+4+4)/4 = 2.50.
 mt = re.search(r"<tr><td>Overall</td><td>([\d.]+)</td><td>([\d.]+)</td>", doc)
 check(bool(mt), "mean table rendered")
 if mt:
-    check(mt.group(1) == "2.50" and mt.group(2) == "3.50",
-          "mean table: archive 2.50, recreation 3.50", "got %s / %s" % mt.groups())
+    check(mt.group(1) == "2.60" and mt.group(2) == "3.80",
+          "mean table: archive 2.60, recreation 3.80", "got %s / %s" % mt.groups())
 
 # 9. Nothing in the page leaks a rater-facing hint of which is which... it SHOULD say,
 #    this file is internal. Instead assert it warns about that plainly.
