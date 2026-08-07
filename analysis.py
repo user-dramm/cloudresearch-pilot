@@ -55,10 +55,10 @@ MAX_PLAYBACK_RATE = 1.25   # video seconds per real second; >1 means sped-up pla
 # rater's failure to discriminate between conceptually distinct attributes and it worsens
 # when raters are tired or the descriptors are vague.
 #
-# `clarity` carries the question "How well the information was explained". The id is
-# older than the wording and is kept because the Apps Script HEADERS already have
-# s1_clarity and s2_clarity, so it lands in real Sheet columns rather than the extra_json
-# overflow. It is read through field() regardless, so it works either way.
+# `clarity` carries the question "How well the information was explained". The id is older
+# than the wording. It is read through field(), which unpacks the extra_json overflow, so
+# it works whether or not the Sheet has a dedicated column - and until the Apps Script is
+# redeployed with the corrected HEADERS, it will not have one.
 #
 # It is labelled "explained" rather than "presented" on purpose: the narration and the
 # on-screen columns already cover presentation, so a presentation metric would move with

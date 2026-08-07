@@ -558,9 +558,12 @@ const QS = [
      of the SUBJECT MATTER, identical on both sides, and that noise would land in the same
      column as the signal.
 
-     Keeps the `clarity` id, which is not a mismatch: the Apps Script HEADERS already have
-     s1_clarity and s2_clarity, so this lands in real Sheet columns rather than the
-     extra_json overflow, and the live endpoint needs no redeploy. */
+     Keeps the `clarity` id, which is older than the wording. NOTE: the deployed Apps
+     Script did NOT have s1_clarity / s2_clarity columns - an earlier comment here
+     claimed it did, and that was wrong. Code.gs HEADERS has been rewritten to add them,
+     but that only takes effect once the script is REDEPLOYED. Until then this arrives in
+     the extra_json overflow, which every reader (analysis.py, the decoder, the report)
+     handles through field(), so nothing is lost either way. */
   { id:"clarity", t:"scale", q:"How well the information was explained", labels:SCALE5 },
 
   /* Placed after all three ratings, not between them. Only raters who scored the

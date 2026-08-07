@@ -314,9 +314,12 @@ Two wording decisions inside it:
   matter, identical on both sides, and that noise would land in the same column as the
   signal.
 
-The field id stays `clarity` although the question says "explained", because the Apps Script
-HEADERS already carry `s1_clarity` and `s2_clarity`, so it lands in real Sheet columns rather
-than the `extra_json` overflow and the live endpoint needs no redeploy.
+The field id stays `clarity` although the question says "explained", because the id is older
+than the wording and every reader resolves it through `field()`.
+
+> **Correction.** An earlier version of this file claimed the deployed Apps Script already
+> had `s1_clarity` / `s2_clarity` columns. It did not. See *The Sheet columns had drifted*
+> below.
 
 What the ordering still buys:
 
@@ -362,6 +365,46 @@ data exists**. Restating it afterwards is moving the goalposts, and it would voi
 pre-registering.
 
 ---
+
+## The Sheet columns had drifted, and what you must do about it
+
+Found 2026-08-07 by comparing what the form sends against `HEADERS` in the Apps Script.
+They had come apart in both directions:
+
+- **12 real answers had no column** and were being written into the `extra_json` blob:
+  both clarity ratings, `h2h_magnitude` (which the "barely any difference" sensitivity
+  check reads), `standby`, both `audio_why` follow-ups, `assignment_id`, `project_id`,
+  `resumed_from_save` and the video counts.
+- **15 columns sat permanently blank**, left from an earlier question set: `pacing`,
+  `ai_read`, per-section `errors` and `standby`, the paste counters, `h2h_confidence`.
+
+**Nothing was ever lost.** `analysis.py`, `decode_responses.py` and `make_report.py` all
+read through a `field()` helper that unpacks the overflow, so every number reached the
+analysis correctly. But the Sheet is the view used to eyeball a rater before approving
+payment, and it showed blank columns with the answers buried in JSON.
+
+`HEADERS` is now rewritten to exactly one column per answer: 62 columns, none blank, none
+duplicated. `tools/test_headers.js` asserts that and fails if they ever drift again.
+
+### Applying it (do this BEFORE launch, not during)
+
+Rows are written positionally as `HEADERS.map(...)`, and the header row is created only
+once. So reordering or inserting columns mid-study writes new rows against the **old**
+header row and silently misaligns every column in them. That makes this safe only while
+the sheet has no real data, which is now.
+
+1. Open the Apps Script project bound to the responses Sheet.
+2. Replace the `HEADERS` array with the one in `apps_script/Code.gs`, and take the
+   `token` line in the overflow loop with it.
+3. **Deploy > Manage deployments > edit the existing deployment > Deploy.** Editing the
+   existing one keeps the URL, which is what `config.js` points at. Do not create a new
+   deployment, or the endpoint URL changes and every rater hits a dead form.
+4. In the responses tab, delete **every row including the header row**. The script writes
+   a fresh header row on the next submission.
+5. Submit once through the form and confirm the new columns appear with values in them.
+
+Until step 3 is done, clarity and the rest still arrive in `extra_json` and the analysis
+still reads them correctly. It is a readability fix, not a data-integrity one.
 
 ## Resume, and why the demo deliberately does not have it
 

@@ -58,24 +58,49 @@ function book_() {
   return ss;
 }
 
-/** Stable column order: this is what analysis.py expects from the CSV export. */
+/** Stable column order: this is what analysis.py expects from the CSV export.
+ *
+ *  REWRITTEN 2026-08-07 to match what the form actually sends. It had drifted badly:
+ *  12 real answers had no column and were being written into the extra_json overflow,
+ *  including BOTH clarity ratings, h2h_magnitude (which the "barely any difference"
+ *  sensitivity check reads) and standby. Meanwhile 15 columns sat permanently blank,
+ *  left over from an earlier question set (pacing, ai_read, per-section standby, the
+ *  paste counters, h2h_confidence).
+ *
+ *  Nothing was ever LOST by that: analysis.py, decode_responses.py and make_report.py
+ *  all read through a field() helper that unpacks extra_json. But a person opening the
+ *  Sheet saw blank columns and a JSON blob where the answers should be, and that is the
+ *  view used to spot-check participants and approve payment.
+ *
+ *  CHANGING THIS ARRAY IS SAFE ONLY WHILE THE SHEET HAS NO REAL ROWS. Rows are written
+ *  as HEADERS.map(...), positionally, but the header row is only ever created once. So
+ *  reordering or inserting mid-study writes new rows against the old header row and
+ *  silently misaligns every column. To apply this: delete every row in the responses
+ *  tab INCLUDING the header row, then submit once so the script recreates it.
+ *
+ *  `token` is deliberately absent. It is the same constant on every row, so it earns no
+ *  column, and doPost drops it rather than letting it fall into the overflow.
+ */
 var HEADERS = [
   "row_id","ts_server","ts_client","study_tag","form_version","is_selftest",
-  "participant_id","pair_id","cc_code","video_source","slot1_key","slot2_key",
+  "participant_id","assignment_id","project_id",
+  "pair_id","cc_code","video_source","slot1_key","slot2_key",
 
-  "s1_overall","s1_visuals","s1_audio","s1_pacing","s1_ai_read","s1_errors",
-  "s1_errors_detail","s1_standby","s1_codeword","s1_comment",
+  /* Section 1: the four ratings, then the conditional narration follow-up, then the
+     code word, then the playback telemetry. */
+  "s1_overall","s1_audio","s1_visuals","s1_clarity","s1_audio_why","s1_codeword",
   "s1_watched_sec","s1_duration_sec","s1_watch_pct","s1_seek_fwd","s1_seek_back",
-  "s1_load_errors","s1_max_rate","s1_rate_ms","s1_paste_count",
+  "s1_load_errors","s1_max_rate","s1_rate_ms","s1_video_count",
 
-  "s2_overall","s2_visuals","s2_audio","s2_pacing","s2_ai_read","s2_errors",
-  "s2_errors_detail","s2_standby","s2_codeword","s2_comment",
+  "s2_overall","s2_audio","s2_visuals","s2_clarity","s2_audio_why","s2_codeword",
   "s2_watched_sec","s2_duration_sec","s2_watch_pct","s2_seek_fwd","s2_seek_back",
-  "s2_load_errors","s2_max_rate","s2_rate_ms","s2_paste_count",
+  "s2_load_errors","s2_max_rate","s2_rate_ms","s2_video_count",
 
-  "h2h_choice","h2h_choice_slot","h2h_choice_key","h2h_why","h2h_confidence",
-  "h2h_other","paste_count","assign_source","assign_nth",
+  /* The end block, in the order a rater answers it. */
+  "h2h_choice","h2h_choice_slot","h2h_choice_key","h2h_magnitude","h2h_why",
+  "standby","s1_comment","h2h_other",
 
+  "assign_source","assign_nth","resumed_from_save",
   "total_ms","completion_code","user_agent","screen_w","screen_h","tz","referrer"
 ];
 
@@ -202,7 +227,11 @@ function doPost(e) {
     // Anything the form sent that HEADERS doesn't know about goes in an overflow
     // column, so a field added to the form is never silently dropped.
     var extra = {};
-    Object.keys(d).forEach(function (k) { if (HEADERS.indexOf(k) === -1) extra[k] = d[k]; });
+    Object.keys(d).forEach(function (k) {
+      // `token` is the same constant on every row and has no column by design, so it
+      // would otherwise be the only thing in extra_json on a normal submission.
+      if (k !== "token" && HEADERS.indexOf(k) === -1) extra[k] = d[k];
+    });
     row.push(Object.keys(extra).length ? JSON.stringify(extra) : "");
 
     sh.appendRow(row);
