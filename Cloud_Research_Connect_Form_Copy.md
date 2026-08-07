@@ -51,13 +51,23 @@ A real submission is a row carrying that participant's ID that clears the gates.
 
 ## 3. Study fields
 
-**Internal name**
+**Project name, the one participants see.** It sits in a LIST of studies next to others,
+so it wants to be a short label rather than a sentence. An earlier version of this file
+put a full sentence here, which reads wrong in a list.
+
+> Training Video Feedback
+
+Alternatives, same neutrality: "Training Video Feedback (25 min)", which helps people opt
+out early but may duplicate the duration Connect already shows, or "Short Training Videos:
+Your Opinion".
+
+Whatever you pick, keep these words OUT of it: versions, old, new, updated, original, AI,
+compare. A rater who works out that the two videos are two builds of one course stops
+judging them and starts guessing which is which.
+
+**Internal name**, your dashboard only, so it can say exactly what this is:
 
 > Training video quality comparison, pilot, Aug 2026
-
-**Title participants see**
-
-> Watch two short training videos and tell us which is better
 
 **Description**
 
