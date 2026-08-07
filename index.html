@@ -271,7 +271,7 @@
    Bump FORM_VERSION on every change that could affect the data, and tag the
    commit with the same string. That pairing is the audit trail.
    =========================================================================== */
-const FORM_VERSION = "1.9.1";
+const FORM_VERSION = "1.11.0";
 
 const CFG = window.STUDY_CONFIG;
 
@@ -914,7 +914,9 @@ function sec_html(slot, count, many, frames){
           CFG.demoBanner ? ' <span class="small">(optional in this preview)</span>'
                          : ' <span class="req">*</span>'}</label>
         <div class="small" style="margin:-6px 0 10px">A word appears on screen part way
-          through the second part. Type it here as soon as you see it.</div>
+          through the second part. Type it here as soon as you see it. <strong>Missed
+          it?</strong> You can drag the video back and watch that bit again, then skip
+          forward to where you had got to.</div>
         <input type="text" id="cw${slot}" autocomplete="off" spellcheck="false"
                placeholder="the word you saw on screen">
         <div class="err" id="err-cw${slot}"></div>

@@ -77,7 +77,7 @@ def main():
             dropped.append((r.get("participant_id"), "study tag %r, not this study" % tag))
             continue
 
-        sides, problems = {}, []
+        sides, problems, cw_wrong = {}, [], []
         for s in (1, 2):
             k = r.get("slot%d_key" % s, "")
             info = KEY.get(k)
@@ -91,7 +91,7 @@ def main():
             pct = pct * 100 if pct <= 1 else pct
             rate = num(field(r, "s%d_max_rate" % s), 1) or 1
             if want and got != want:
-                problems.append("wrong code word at position %d" % s)
+                cw_wrong.append(s)
             if pct < 85:
                 problems.append("only %.0f%% watched at position %d" % (pct, s))
             if rate > 1.25:
@@ -106,6 +106,13 @@ def main():
                 "audio_why": field(r, "s%d_audio_why" % s),
                 "seek": field(r, "s%d_seek_fwd" % s),
             }
+        # Same rule as analysis.py, deliberately: one wrong code word is a flag and the
+        # row is kept, both wrong is an exclusion. The two readers disagreeing about who
+        # counts is the bug this whole file exists to prevent.
+        if len(cw_wrong) >= 2:
+            problems.append("code word wrong on BOTH videos")
+        cw_flag = cw_wrong[0] if len(cw_wrong) == 1 else None
+
         if "old" not in sides or "new" not in sides:
             dropped.append((r.get("participant_id"), "; ".join(problems) or "could not decode both positions"))
             continue
@@ -131,7 +138,7 @@ def main():
             "mins": tot / 60000 if tot else None,
             "assign": r.get("assign_source"),
             "resumed": field(r, "resumed_from_save"),
-            "problems": problems,
+            "problems": problems, "cw_flag": cw_flag,
         })
         if not problems:
             kept.append(cards[-1])
@@ -195,6 +202,11 @@ def main():
                       else "<span class='ag no'>rated the other one higher</span>")
         probs = ("<div class='probs'><strong>Excluded:</strong> " +
                  "; ".join(esc(p) for p in c["problems"]) + "</div>") if c["problems"] else ""
+        if c.get("cw_flag") and not c["problems"]:
+            probs += ("<div class='flagbox'><strong>Counted, with a note:</strong> missed "
+                      "the code word on video %d. It shows for five seconds, once, so one "
+                      "miss is what a blink looks like. Their answers count.</div>"
+                      % c["cw_flag"])
         blocks = side_block(c, "new") + side_block(c, "old")
         extra = ""
         if c["why"]:
@@ -304,6 +316,9 @@ def main():
         color:var(--mut); margin-bottom:2px }}
  .probs {{ background:#fdeceb; color:#8c1d18; padding:8px 10px; border-radius:6px;
            font-size:13px; margin-bottom:12px }}
+ /* Amber, not red: this row still counts. */
+ .flagbox {{ background:#fff5d6; color:#6b5200; padding:8px 10px; border-radius:6px;
+             font-size:13px; margin-bottom:12px }}
  .card footer {{ margin-top:12px; padding-top:9px; border-top:1px solid var(--line);
                  font-size:12px; color:var(--mut) }}
  ul.drop {{ font-size:13px; color:var(--mut) }}

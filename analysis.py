@@ -178,6 +178,7 @@ def main():
     kept, dropped, seen_pid = [], [], set()
     for r in rows:
         why = []
+        cw_wrong = []          # which videos had a wrong code word, judged after both
         if (r.get("is_selftest") or "").lower() == "yes":
             why.append("selftest")
         tag = (r.get("study_tag") or "").strip()
@@ -198,7 +199,7 @@ def main():
             expect = KEY.get(k, {}).get("codeword", "")
             got = (r.get("s%s_codeword" % s) or "").strip().lower()
             if expect and got != expect.strip().lower():
-                why.append("code word wrong on video %s" % s)
+                cw_wrong.append(str(s))
             # NO length gate on the per-video comment: it is OPTIONAL in the form now,
             # and rejecting people for skipping an optional question would exclude
             # most of the sample. The text gate moved to h2h_why below, which is the
@@ -209,6 +210,24 @@ def main():
 
         tot = num(r.get("total_ms"), 0) or 0
         clips = sum((num(r.get("s%s_duration_sec" % s), 0) or 0) for s in ("1", "2"))
+        # CODE WORDS: one wrong is a FLAG, both wrong is an exclusion.
+        #
+        # It shows for five seconds, once, part way into part two, so a single miss is
+        # what a blink looks like, and it was the only gate an honest participant could
+        # trip. Binning someone who watched 95%, rated everything and wrote a useful
+        # comment, over one mistyped word, throws away the thing the study is for.
+        #
+        # Both wrong is a different claim. Getting neither is what leaving the tab playing
+        # in the background looks like, and that is the case watch-time cannot catch: the
+        # player really is playing, so the percentage accrues honestly while nobody
+        # watches. The code word is the only evidence separating those two, which is why
+        # it still excludes when BOTH are missed.
+        # Recorded on the ROW, not on `rec`: rec is built in a later loop over the rows
+        # that survived, and a flagged row must carry its flag whether it survives or not.
+        r["_cw_wrong"] = len(cw_wrong)
+        if len(cw_wrong) >= 2:
+            why.append("code word wrong on BOTH videos")
+
         floor = max(MIN_SESSION_SEC, MIN_SESSION_FRAC * clips) if clips else MIN_SESSION_SEC
         if tot and tot / 1000 < floor:
             why.append("session only %ds, needs %ds for %ds of video"
@@ -246,6 +265,15 @@ def main():
         print("   - %-22s %-16s %s" % (r.get("row_id", "?"),
                                        (r.get("participant_id") or "?")[:14],
                                        "; ".join(why)))
+    flagged = [r for r, _ in kept if r.get("_cw_wrong")]
+    if flagged:
+        print("\nflagged, still counted  %d" % len(flagged))
+        for r in flagged:
+            print("   ~ %-22s %-16s missed the code word on one video, kept"
+                  % (r.get("row_id", "?"), (r.get("participant_id") or "?")[:14]))
+        print("      One miss is what a blink looks like: it shows for five seconds, once.")
+        print("      Both missed is an exclusion, because getting neither is what leaving")
+        print("      the tab playing in the background looks like.")
     if a.include_excluded:
         print("\n!! --include-excluded is ON: excluded rows are being analysed too.")
     if not use:

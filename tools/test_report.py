@@ -105,7 +105,14 @@ rows = [
     row("C_NEWFIRST_PREFERS_OLD", "new", {"new": (2, 2, 2, 2), "old": (4, 4, 4, 4)}, prefers="old"),
     row("D_OLDFIRST_PREFERS_OLD", "old", {"new": (2, 2, 2, 2), "old": (4, 4, 4, 4)}, prefers="old"),
     # Rows that MUST be excluded.
-    row("E_BADCODEWORD", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, s1_codeword="nonsense"),
+    # ONE wrong code word: kept and flagged. It shows for five seconds, once, so a single
+    # miss is what a blink looks like, and binning an otherwise complete response over it
+    # throws away the feedback the study is for.
+    row("E_ONECODEWORD", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, s1_codeword="nonsense"),
+    # BOTH wrong: excluded. Getting neither is what leaving the tab playing looks like,
+    # and watch-time cannot catch that because the player really is playing.
+    row("E_BOTHCODEWORDS", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)},
+        s1_codeword="nonsense", s2_codeword="alsononsense"),
     row("F_LOWWATCH", "old", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, s2_watch_pct=0.40),
     row("G_FASTPLAY", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, s1_max_rate=2.0),
     row("H_NOCHOICE", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}),
@@ -113,7 +120,11 @@ rows = [
     row("J_WRONGTAG", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, study_tag="demo-2026-08"),
     row("K_SHORTSESSION", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, total_ms=60_000),
 ]
-rows[7]["h2h_choice_key"] = ""; rows[7]["h2h_choice_slot"] = ""; rows[7]["h2h_choice"] = ""
+# By row_id, NOT by index. This was rows[7], which silently pointed at a different row
+# the moment another fixture was inserted above it, blanking the wrong one's choice and
+# leaving H_NOCHOICE with a choice it was supposed to be missing.
+_h = next(x for x in rows if x["row_id"] == "H_NOCHOICE")
+_h["h2h_choice_key"] = ""; _h["h2h_choice_slot"] = ""; _h["h2h_choice"] = ""
 
 # One honest rater who submitted TWICE. The submit path retries, so a submission that
 # reached the Sheet but whose response was lost produces a second identical row. The page
@@ -169,7 +180,7 @@ check("ratings agree with the pick" in card_for(doc, "C_NEWFIRST_PREFERS_OLD"),
       "C: agreement flag set for an archive-preferring rater too")
 
 # 6. Bad rows excluded, and each one SAID so rather than silently dropped.
-for pid, why in (("E_BADCODEWORD", "code word"), ("F_LOWWATCH", "watched"),
+for pid, why in (("E_BOTHCODEWORDS", "code word"), ("F_LOWWATCH", "watched"),
                  ("G_FASTPLAY", "x"), ("K_SHORTSESSION", "session")):
     blk = card_for(doc, pid)
     check("<strong>Excluded:</strong>" in blk, "%s marked excluded on its card" % pid)
@@ -182,6 +193,11 @@ check("I_SELFTEST" not in doc.split('<h2>Not counted</h2>')[0].split('<h2>Every 
 check("selftest" in doc, "selftest row listed under Not counted")
 check("study tag" in doc and "demo-2026-08" in doc, "wrong-study-tag row listed with its tag")
 
+# 6a. ONE wrong code word is kept, and says so on the card.
+one = card_for(doc, "E_ONECODEWORD")
+check("<strong>Excluded:</strong>" not in one, "a single missed code word is NOT excluded")
+check("Counted, with a note" in one, "the single miss is noted on the card")
+
 # 6b. A rater who submitted twice counts ONCE.
 dup_cards = doc.count('<span class="pid">L_DOUBLESUBMIT<')
 check(dup_cards == 1, "a double submission produces ONE card, not two",
@@ -192,17 +208,17 @@ check("duplicate participant" in doc, "the extra submission is listed as a dupli
 m = re.search(r'<span class="big">(\d+) of (\d+)</span>', doc)
 check(bool(m), "headline present")
 if m:
-    check(m.group(2) == "5", "headline denominator counts only clean rows, deduped",
+    check(m.group(2) == "6", "headline denominator counts only clean rows, deduped",
           "got %s" % m.group(2))
-    check(m.group(1) == "3", "headline numerator counts recreation wins", "got %s" % m.group(1))
+    check(m.group(1) == "4", "headline numerator counts recreation wins", "got %s" % m.group(1))
 
 # 8. Mean table uses version, not position: recreation overall (5+5+2+2)/4 = 3.50,
 #    archive (1+1+4+4)/4 = 2.50.
 mt = re.search(r"<tr><td>Overall</td><td>([\d.]+)</td><td>([\d.]+)</td>", doc)
 check(bool(mt), "mean table rendered")
 if mt:
-    check(mt.group(1) == "2.60" and mt.group(2) == "3.80",
-          "mean table: archive 2.60, recreation 3.80", "got %s / %s" % mt.groups())
+    check(mt.group(1) == "2.67" and mt.group(2) == "4.00",
+          "mean table: archive 2.67, recreation 4.00", "got %s / %s" % mt.groups())
 
 # 9. Nothing in the page leaks a rater-facing hint of which is which... it SHOULD say,
 #    this file is internal. Instead assert it warns about that plainly.
