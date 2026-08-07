@@ -406,6 +406,51 @@ the sheet has no real data, which is now.
 Until step 3 is done, clarity and the rest still arrive in `extra_json` and the analysis
 still reads them correctly. It is a readability fix, not a data-integrity one.
 
+## Captions, and a visible difference between the two sides
+
+Two separate things came out of checking this, and the second matters more.
+
+### 1. YouTube's caption layer was leaking through, and is now stopped
+
+Every upload has a YouTube auto-generated ASR track. Screenshots of all ten videos showed
+that layer rendering despite `cc_load_policy:0` and `unloadModule`, because the unload ran
+once at `onReady` and the module can load again afterwards. On the recreation side, which
+has captions burned into the picture, that produced TWO overlapping caption blocks,
+differently wrapped, unreadable. On the archive side it produced a caption track that
+should not have been there at all.
+
+`killCaptions()` now applies three mechanisms on `onReady` AND on every state change:
+`cc_load_policy:0`, `unloadModule`, and `setOption(track, {})`. Re-screenshotted all ten
+afterwards: YouTube's layer is gone from every one.
+
+**You cannot fix this in YouTube Studio.** Studio lets you delete tracks you uploaded, but
+there is no delete for an auto-generated one. An earlier version of this file suggested
+disabling it there; that was wrong. The code is the fix.
+
+Note that `getOptions()` still reports `["captions"]` after the fix. The module is present
+but no track is selected, so that reading means nothing. Only a screenshot settles it.
+
+### 2. The recreation has burned-in subtitles. The archive has none.
+
+This is not a bug and not a player setting. It is a real difference between the two builds,
+and it is the most visible difference a rater will see:
+
+| | captions on screen |
+|---|---|
+| Archive (old) | none |
+| Recreation (new) | burned in, throughout |
+
+The recreated pipeline genuinely produces captioned video, so this is something it improved.
+But it is worth naming before any data exists, because **a rater who prefers the recreation
+may be preferring the subtitles** rather than the narration, the slides or the explanation,
+and the `visuals` scale in particular will absorb it.
+
+Nothing here needs changing. Removing the burned-in captions would mean re-rendering and
+re-uploading five videos, and it would also mean testing a version of the pipeline you do
+not actually ship. The right move is to record it now, as a known contributor to any gap,
+rather than discover it in the write-up. If the criterion is being restated with JK anyway,
+this belongs in that conversation.
+
 ## Resume, and why the demo deliberately does not have it
 
 A rater who loses power, closes the tab, or gets bumped off wifi reopens the same link
