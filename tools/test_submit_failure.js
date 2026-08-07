@@ -102,5 +102,6 @@ const ck = (c, l, d = '') => { if (!c) fails.push(l);
   console.log(fails.length ? fails.length + ' FAILED: ' + fails.join('; ')
                            : 'a failed submission cannot cost a rater their session');
   await b.close();
- } catch (e) { console.log('ERROR: ' + e.message); }
+  process.exit(fails.length ? 1 : 0);
+ } catch (e) { console.log('ERROR: ' + e.message); process.exit(1); }
 })();

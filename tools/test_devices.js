@@ -7,7 +7,7 @@
 //   node tools/test_devices.js
 
 const { chromium, devices } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
-const U='http://localhost:8792/index.html?participantId=DEV1';
+const U='http://localhost:'+(process.env.PORT||8795)+'/index.html?participantId=DEV1';
 const fails=[];
 const ck=(c,l,d='')=>{ if(!c) fails.push(l); console.log((c?'  ok    ':'  FAIL  ')+l+(!c&&d?'   ['+d+']':'')); };
 (async()=>{
@@ -38,5 +38,6 @@ const ck=(c,l,d='')=>{ if(!c) fails.push(l); console.log((c?'  ok    ':'  FAIL  
   }
   console.log('');
   console.log(fails.length? fails.length+' FAILED: '+fails.join('; ') : 'device gating correct in every case');
+  process.exit(fails.length ? 1 : 0);
   await b.close();
 })();

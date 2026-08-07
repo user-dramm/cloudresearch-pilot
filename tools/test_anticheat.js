@@ -79,6 +79,7 @@ const fails=[]; const ck=(c,l,d='')=>{ if(!c)fails.push(l); console.log((c?'  ok
      'credit moved '+pa.toFixed(1)+' -> '+pb.toFixed(1));
   console.log('');
   console.log(fails.length? fails.length+' FAILED: '+fails.join('; ') : 'every anti-cheat layer holds');
+  process.exit(fails.length ? 1 : 0);
   await b.close();
- }catch(e){ console.log('ERROR: '+e.message); }
+ }catch(e){ console.log('ERROR: '+e.message); process.exit(1); }
 })();

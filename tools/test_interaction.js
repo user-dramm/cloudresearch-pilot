@@ -6,7 +6,7 @@
 //   node tools/test_interaction.js
 
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
-const U='http://localhost:8792/index.html?participantId=INT1&selftest=1';
+const U='http://localhost:'+(process.env.PORT||8795)+'/index.html?participantId=INT1&selftest=1';
 const fails=[]; const ck=(c,l,d='')=>{ if(!c)fails.push(l); console.log((c?'  ok    ':'  FAIL  ')+l+(!c&&d?'   ['+d+']':'')); };
 (async()=>{
   const b=await chromium.launch({channel:'chrome',args:['--autoplay-policy=no-user-gesture-required','--mute-audio']});
@@ -85,5 +85,6 @@ const fails=[]; const ck=(c,l,d='')=>{ if(!c)fails.push(l); console.log((c?'  ok
   ck(errs.length===0,'no js errors through all of it', errs.slice(0,1).join(''));
   console.log('');
   console.log(fails.length? fails.length+' FAILED: '+fails.join('; ') : 'all '+'interaction checks pass');
+  process.exit(fails.length ? 1 : 0);
   await b.close();
 })();
