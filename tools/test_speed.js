@@ -1,4 +1,4 @@
-// PLAYBACK SPEED: BLOCKED, EXPLAINED, AND RECORDED
+// PLAYBACK SPEED: BLOCKED SILENTLY, AND RECORDED
 //
 // Capping watch credit at real elapsed time already meant 2x bought nothing - the gate
 // costs the same number of real minutes however fast the video is set to play. So forcing
@@ -6,8 +6,11 @@
 // someone at 2x sees the bar advance at half the pace they expect, decides the page is
 // broken, and either messages you or abandons a session you have paid for.
 //
-// Checks the warning appears in three places, which is the point: up front in the intro,
-// on the video screen before they reach for the control, and at the moment they try it.
+// The reset is deliberately SILENT. There is no way to remove the speed control itself:
+// the IFrame API cannot hide the settings gear, and controls:0 would take play and pause
+// with it. So the rate is snapped back within half a second and nothing is said about it.
+// The intro still sets the time expectation, which is what stops someone reaching for the
+// control in the first place.
 //
 //   cd ~/cloudresearch_pilot && python3 -m http.server 8795 &
 //   PLAYWRIGHT_PATH=... node tools/test_speed.js
@@ -22,8 +25,7 @@ const fails=[]; const ck=(c,l,d='')=>{ if(!c)fails.push(l); console.log((c?'  ok
   await p.goto(U,{waitUntil:'domcontentloaded'});
   await p.waitForFunction(()=>{const i=document.querySelector('#s-intro');return i&&getComputedStyle(i).display!=='none';},{timeout:150000});
   const intro=await p.evaluate(()=>[...document.querySelectorAll('#s-intro li')].map(l=>l.innerText).join(' '));
-  ck(/speeding it up/i.test(intro),'the intro warns that speeding up will not help');
-  ck(/full time/i.test(intro),'the intro says to plan for the full time');
+  ck(/full time/i.test(intro),'the intro tells them to plan for the full time');
   await p.locator('#btn-start').click();
   await p.waitForSelector('#gate-pct1_0',{state:'attached',timeout:60000});
   await p.waitForFunction(()=>{try{return players['1_0'].getDuration()>0;}catch(e){return false;}},{timeout:150000});
@@ -40,9 +42,9 @@ const fails=[]; const ck=(c,l,d='')=>{ if(!c)fails.push(l); console.log((c?'  ok
     warned: (document.querySelector('#gate-msg1_0')||{classList:{contains:()=>false}}).classList.contains('warn'),
     maxRate: watch[1].vids[0].maxRate }));
   ck(st.rate===1,'the player is put back to normal speed','still at '+st.rate+'x');
-  ck(/will not unlock the questions any sooner/i.test(st.msg),'an on-screen note explains why',
+  ck(!/speed is back to normal/i.test(st.msg),'the reset is SILENT, no note shown',
      JSON.stringify(st.msg.slice(0,70)));
-  ck(st.warned===true,'the note is visually marked');
+  ck(st.warned===false,'no warning styling is applied');
   ck(st.maxRate>1,'the attempt is still recorded for the analysis','max_rate='+st.maxRate);
   await p.screenshot({path:'/tmp/speed-note.png'});
 
@@ -51,14 +53,18 @@ const fails=[]; const ck=(c,l,d='')=>{ if(!c)fails.push(l); console.log((c?'  ok
   ck((after-before) <= 4.5,'no extra credit was earned during the 2x attempt',
      'gained '+(after-before).toFixed(1)+'s in 3s');
 
-  // The note must clear itself.
-  await p.waitForTimeout(10000);
-  const later=await p.evaluate(()=>({msg:(document.querySelector('#gate-msg1_0')||{}).textContent||'',
-     warned:(document.querySelector('#gate-msg1_0')||{classList:{contains:()=>false}}).classList.contains('warn')}));
-  ck(!later.warned && /unlock/i.test(later.msg),'the note clears back to the normal message',
+  // It must STAY at 1x, not drift back up after the first reset.
+  await p.evaluate(()=>players['1_0'].setPlaybackRate(1.75));
+  await p.waitForTimeout(2500);
+  await p.evaluate(()=>players['1_0'].setPlaybackRate(2));
+  await p.waitForTimeout(2500);
+  const later=await p.evaluate(()=>({rate:players['1_0'].getPlaybackRate(),
+     msg:(document.querySelector('#gate-msg1_0')||{}).textContent||''}));
+  ck(later.rate===1,'repeat attempts are reset too, not just the first','at '+later.rate+'x');
+  ck(/unlock/i.test(later.msg),'the gate message is untouched throughout',
      JSON.stringify(later.msg.slice(0,50)));
   console.log('');
-  console.log(fails.length? fails.length+' FAILED: '+fails.join('; ') : 'speed is blocked, explained, and recorded');
+  console.log(fails.length? fails.length+' FAILED: '+fails.join('; ') : 'speed is reset silently on every attempt, and still recorded');
   await b.close();
   process.exit(fails.length?1:0);
  }catch(e){ console.log('ERROR: '+e.message); process.exit(1); }
