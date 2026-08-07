@@ -89,6 +89,7 @@ def main():
                 "overall": field(r, "s%d_overall" % s),
                 "audio": field(r, "s%d_audio" % s),
                 "visuals": field(r, "s%d_visuals" % s),
+                "clarity": field(r, "s%d_clarity" % s),
                 "audio_why": field(r, "s%d_audio_why" % s),
                 "seek": field(r, "s%d_seek_fwd" % s),
             }
@@ -135,12 +136,14 @@ def main():
         d["new"] += 1 if c["winner"] == "new" else 0
 
     rowsout = []
-    for metric in ("overall", "audio", "visuals"):
+    for metric in ("overall", "audio", "visuals", "clarity"):
         o = mean([num(c["old"][metric]) for c in kept])
         n = mean([num(c["new"][metric]) for c in kept])
         rowsout.append((metric, o, n, (n - o) if (o is not None and n is not None) else None))
 
-    LABEL = {"overall": "Overall", "audio": "Narration", "visuals": "On-screen"}
+    # "Explained", not "Clarity": the column id is older than the question wording.
+    LABEL = {"overall": "Overall", "audio": "Narration", "visuals": "On-screen",
+             "clarity": "Explained"}
 
     def side_block(c, version):
         s = c[version]
@@ -157,6 +160,7 @@ def main():
             <span><b>{esc(s['overall'] or '-')}</b> overall</span>
             <span><b>{esc(s['audio'] or '-')}</b> narration</span>
             <span><b>{esc(s['visuals'] or '-')}</b> on-screen</span>
+            <span><b>{esc(s['clarity'] or '-')}</b> explained</span>
           </div>
           <div class="meta">watched {s['pct']:.0f}% &middot; {s['rate']:.2f}x &middot;
             code word {'ok' if s['cw_ok'] else 'WRONG'}</div>

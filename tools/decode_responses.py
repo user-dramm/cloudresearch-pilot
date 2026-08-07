@@ -124,9 +124,9 @@ def main():
             lines.append("      watched %.0f%% of %.0fs   seeks fwd %s   max speed %.2fx"
                          % (pct, dur, r.get("s%s_seek_fwd" % s, "?"), rate))
             lines.append("      code word: %s" % cw)
-            lines.append("      overall %s  voice %s  on-screen %s"
+            lines.append("      overall %s  voice %s  on-screen %s  explained %s"
                          % (field(r, "s%s_overall" % s) or "-", field(r, "s%s_audio" % s) or "-",
-                            field(r, "s%s_visuals" % s) or "-"))
+                            field(r, "s%s_visuals" % s) or "-", field(r, "s%s_clarity" % s) or "-"))
             nw = field(r, "s%s_audio_why" % s)
             if nw:
                 lines.append("      on the narration: \"%s\"" % str(nw)[:80])

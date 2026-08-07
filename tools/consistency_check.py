@@ -77,7 +77,7 @@ note('"Barely any difference"' in an,
 am = re.search(r'METRICS = \((.*?)\)', an, re.S)
 metrics = [s.strip().strip('"') for s in am.group(1).split(",") if s.strip()] if am else []
 ids = form_ids()
-note(sorted(metrics) == sorted(["overall", "audio", "visuals"]),
+note(sorted(metrics) == sorted(["overall", "audio", "visuals", "clarity"]),
      "analysis METRICS", str(metrics))
 for mt in metrics:
     note(mt in ids, "form asks for metric %r" % mt)

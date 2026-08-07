@@ -29,7 +29,7 @@ HEAD = ["row_id", "ts_server", "ts_client", "study_tag", "form_version", "is_sel
         "h2h_choice", "h2h_choice_slot", "h2h_choice_key", "h2h_magnitude", "h2h_why",
         "standby", "s1_comment", "h2h_other", "assign_source", "total_ms", "extra_json"]
 for s in (1, 2):
-    for f in ("overall", "audio", "visuals", "audio_why", "codeword", "watched_sec",
+    for f in ("overall", "audio", "visuals", "clarity", "audio_why", "codeword", "watched_sec",
               "duration_sec", "watch_pct", "seek_fwd", "max_rate", "rate_ms", "video_count"):
         HEAD.append("s%d_%s" % (s, f))
 
@@ -37,7 +37,7 @@ DUR = 540
 
 
 def row(pid, first_version, scores, **over):
-    """scores = {'new': (overall,audio,visuals), 'old': (...)}, keyed by VERSION."""
+    """scores = {'new': (overall,audio,visuals,clarity), 'old': (...)}, keyed by VERSION."""
     order = ([new_key, old_key] if first_version == "new" else [old_key, new_key])
     r = {h: "" for h in HEAD}
     r.update({"row_id": pid, "study_tag": "pilot-2026-07", "form_version": "1.7.0",
@@ -48,8 +48,9 @@ def row(pid, first_version, scores, **over):
               "total_ms": int(DUR * 2 * 1.05 * 1000)})
     for s, k in ((1, order[0]), (2, order[1])):
         ver = KEY[k]["version"]
-        o, a, v = scores[ver]
+        o, a, v, cl = scores[ver]
         r["s%d_overall" % s] = o; r["s%d_audio" % s] = a; r["s%d_visuals" % s] = v
+        r["s%d_clarity" % s] = cl
         r["s%d_codeword" % s] = CW[k]
         r["s%d_duration_sec" % s] = DUR
         r["s%d_watched_sec" % s] = int(DUR * .95)
@@ -98,19 +99,19 @@ def check(cond, label, detail=""):
 
 rows = [
     # Opposite orders, identical truth: recreation 5/5/5, archive 1/2/1.
-    row("A_NEWFIRST", "new", {"new": (5, 5, 5), "old": (1, 2, 1)}, prefers="new"),
-    row("B_OLDFIRST", "old", {"new": (5, 5, 5), "old": (1, 2, 1)}, prefers="new"),
+    row("A_NEWFIRST", "new", {"new": (5, 5, 5, 5), "old": (1, 2, 1, 1)}, prefers="new"),
+    row("B_OLDFIRST", "old", {"new": (5, 5, 5, 5), "old": (1, 2, 1, 1)}, prefers="new"),
     # A rater who genuinely preferred the archive, in each order.
-    row("C_NEWFIRST_PREFERS_OLD", "new", {"new": (2, 2, 2), "old": (4, 4, 4)}, prefers="old"),
-    row("D_OLDFIRST_PREFERS_OLD", "old", {"new": (2, 2, 2), "old": (4, 4, 4)}, prefers="old"),
+    row("C_NEWFIRST_PREFERS_OLD", "new", {"new": (2, 2, 2, 2), "old": (4, 4, 4, 4)}, prefers="old"),
+    row("D_OLDFIRST_PREFERS_OLD", "old", {"new": (2, 2, 2, 2), "old": (4, 4, 4, 4)}, prefers="old"),
     # Rows that MUST be excluded.
-    row("E_BADCODEWORD", "new", {"new": (5, 5, 5), "old": (3, 3, 3)}, s1_codeword="nonsense"),
-    row("F_LOWWATCH", "old", {"new": (5, 5, 5), "old": (3, 3, 3)}, s2_watch_pct=0.40),
-    row("G_FASTPLAY", "new", {"new": (5, 5, 5), "old": (3, 3, 3)}, s1_max_rate=2.0),
-    row("H_NOCHOICE", "new", {"new": (5, 5, 5), "old": (3, 3, 3)}),
-    row("I_SELFTEST", "new", {"new": (5, 5, 5), "old": (3, 3, 3)}, is_selftest="yes"),
-    row("J_WRONGTAG", "new", {"new": (5, 5, 5), "old": (3, 3, 3)}, study_tag="demo-2026-08"),
-    row("K_SHORTSESSION", "new", {"new": (5, 5, 5), "old": (3, 3, 3)}, total_ms=60_000),
+    row("E_BADCODEWORD", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, s1_codeword="nonsense"),
+    row("F_LOWWATCH", "old", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, s2_watch_pct=0.40),
+    row("G_FASTPLAY", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, s1_max_rate=2.0),
+    row("H_NOCHOICE", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}),
+    row("I_SELFTEST", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, is_selftest="yes"),
+    row("J_WRONGTAG", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, study_tag="demo-2026-08"),
+    row("K_SHORTSESSION", "new", {"new": (5, 5, 5, 5), "old": (3, 3, 3, 3)}, total_ms=60_000),
 ]
 rows[7]["h2h_choice_key"] = ""; rows[7]["h2h_choice_slot"] = ""; rows[7]["h2h_choice"] = ""
 

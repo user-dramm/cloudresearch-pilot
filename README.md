@@ -278,8 +278,8 @@ position effect, the speaker findings, preference magnitude, and inter-rater agr
 
 ### How the questions are ordered, and why it isn't arbitrary
 
-**Current shape, as of 2026-08-07.** Per video: **three labelled 1-5 scales** and nothing
-else, all four clicks-per-video including the code word. Every open question sits at the end
+**Current shape, as of 2026-08-07.** Per video: **four labelled 1-5 scales** and nothing
+else, five clicks-per-video including the code word. Every open question sits at the end
 of the study, not in the per-video block.
 
 | Per video | |
@@ -287,6 +287,7 @@ of the study, not in the per-video block.
 | `overall` | Overall, how would you rate this training video? |
 | `audio` | The narration, the voice and how it was delivered |
 | `visuals` | The slides and what was on screen |
+| `clarity` | How well the information was explained |
 | `audio_why` | shown **only** if `audio` was 1 or 2, and optional even then |
 | code word | a text box under the player, outside the locked card |
 
@@ -294,10 +295,28 @@ Two earlier questions are gone, and the reasons are worth keeping:
 
 - **A separate speaker question** overlapped the narration rating almost entirely, so raters
   answered the same thing twice.
-- **`clarity` ("How well did it explain things?")**, dropped 2026-08-07. The other three ask
-  about concrete, observable things; that one asked for a judgement about teaching, which
-  read as out of place beside them. `overall` already absorbs it, and the end-of-study
-  written answers are a better route to it than a fourth identical scale.
+`clarity` has a history worth knowing. It shipped as the question "How well did it explain
+things?", was dropped on 2026-08-07 for reading out of place, and came back the same day
+reworded once the reason was clear: the problem was **register, not construct**. The other
+three are plain labels, so a question among them interrupted the run of clicks. As a label
+it reads as one of the set.
+
+Two wording decisions inside it:
+
+- **"Explained", not "presented".** The narration and the on-screen questions *are* the
+  presentation, so a presentation metric would mostly re-ask them in summary and return a
+  number that moves with them and discriminates nothing. "Explained" asks whether the
+  material landed, which two videos can differ on while sharing identical voice quality and
+  identical slides, because it is carried by structure, pacing and examples. That is what
+  the recreation changed.
+- **Not "the content itself".** Both videos in a pair teach the same course from the same
+  scope, so content barely differs. Asking about content invites a rating of the subject
+  matter, identical on both sides, and that noise would land in the same column as the
+  signal.
+
+The field id stays `clarity` although the question says "explained", because the Apps Script
+HEADERS already carry `s1_clarity` and `s2_clarity`, so it lands in real Sheet columns rather
+than the `extra_json` overflow and the live endpoint needs no redeploy.
 
 What the ordering still buys:
 

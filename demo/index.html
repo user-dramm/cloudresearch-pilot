@@ -199,7 +199,7 @@
           <li>Each video runs in <strong>two parts with a short black pause between them</strong>. Keep watching when the screen goes dark. It says "Part 2" and carries on.</li>
           <li>The questions unlock once a video has actually played through. Jumping ahead won't work: the player rewinds you to where you got to.</li>
           <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. There's a box right under the video, so type it in as soon as you see it and you don't have to remember it.</li>
-          <li>After each video there are <strong>three quick questions</strong>. The writing, if you want to do any, is all at the end.</li>
+          <li>After each video there are <strong>four quick questions</strong>. The writing, if you want to do any, is all at the end.</li>
           <li id="li-resume">Your progress is saved as you go. If your browser closes or you lose power, reopen this same link and you'll carry on from where you stopped, without having to rewatch.</li>
           <li>Your written comments matter most. The ratings tell us <em>that</em> something worked; only your own words tell us <em>why</em>, and that is the part we cannot get any other way.</li>
         </ul>
@@ -271,7 +271,7 @@
    Bump FORM_VERSION on every change that could affect the data, and tag the
    commit with the same string. That pairing is the audit trail.
    =========================================================================== */
-const FORM_VERSION = "1.7.2";
+const FORM_VERSION = "1.8.0";
 
 const CFG = window.STUDY_CONFIG;
 
@@ -529,22 +529,39 @@ const QS = [
      largest among respondents with less formal education, which is this panel. The
      submitted value is still 1-5, so clause 3 of the criterion is unaffected.
 
-     KNOWN TRADE: several scales in a row with identical anchors is the straightlining
+     KNOWN TRADE: four scales in a row with identical anchors is the straightlining
      shape. The code word question used to break the run; ease of use won instead. So
-     rather than design around it invisibly, analysis.py DETECTS it - a row whose
+     rather than design around it invisibly, analysis.py DETECTS it - a row whose four
      ratings are identical on both videos is flagged. A measured risk beats a hidden
-     one. Dropping the fourth scale in Aug 2026 shortened the run to three. */
+     one, and four identical is a far stronger signal than three: three match by chance
+     about five times as often. */
   { id:"overall", t:"scale", q:"Overall, how would you rate this training video?", labels:SCALE5 },
   { id:"audio",   t:"scale", q:"The narration - the voice and how it was delivered", labels:SCALE5 },
 
   { id:"visuals", t:"scale", q:"The slides and what was on screen", labels:SCALE5 },
 
-  /* Removed 2026-08-07: a fourth scale, "How well did it explain things?". It read as
-     out of place next to the other three, which ask about concrete, observable things
-     (the video as a whole, the voice, the screen) where this one asked for a judgement
-     about teaching. Overall already absorbs it, and the end-of-study written answers
-     are a better route to it than a fifth identical 1-5 scale. Dropping it also
-     shortens the straightlining run from four scales to three. */
+  /* Restored 2026-08-07, reworded. This began as "How well did it explain things?", was
+     dropped for reading out of place, and came back once the reason was clear: the
+     problem was register, not construct. The other three are plain labels; that one was
+     a question, so it interrupted an otherwise uninterrupted run of clicks.
+
+     "EXPLAINED" rather than "presented", deliberately. The narration and the slides ARE
+     the presentation, so a question about presentation mostly re-asks the two either
+     side of it in summary form, and returns a number that moves with them and
+     discriminates nothing. "Explained" asks whether the material actually landed, which
+     two videos can differ on while sharing identical voice quality and identical slides,
+     because it is carried by structure, pacing and examples. That is what the recreation
+     changed. It is also the plainer of the two words, which matters for this panel.
+
+     Not "the content itself": both videos in a pair teach the same course from the same
+     scope, so content barely differs between them. Asking about content invites a rating
+     of the SUBJECT MATTER, identical on both sides, and that noise would land in the same
+     column as the signal.
+
+     Keeps the `clarity` id, which is not a mismatch: the Apps Script HEADERS already have
+     s1_clarity and s2_clarity, so this lands in real Sheet columns rather than the
+     extra_json overflow, and the live endpoint needs no redeploy. */
+  { id:"clarity", t:"scale", q:"How well the information was explained", labels:SCALE5 },
 
   /* Placed after all three ratings, not between them. Only raters who scored the
      narration 1 or 2 ever see it, and it is optional even then - someone who gave it a
@@ -871,8 +888,8 @@ function sec_html(slot, count, many, frames){
        ? `This first set has ${count} videos from the same course. Watch them both, then the questions below unlock. A code word appears on screen during the second one, and we ask for it afterwards.`
        : `This second set is ${count} videos from a different version of the course. Same as before: watch both, then the questions unlock. There is a different code word in the second one.`)
     : (first
-       ? "This video comes in two parts with a short black pause between them. Keep watching, it hasn't ended. A code word appears on screen during the second part: type it in the box below as soon as you see it. Once the video has played through, three quick questions unlock underneath."
-       : "Same as before: two parts with a pause between them, a code word in the second part, then three quick questions.");
+       ? "This video comes in two parts with a short black pause between them. Keep watching, it hasn't ended. A code word appears on screen during the second part: type it in the box below as soon as you see it. Once the video has played through, four quick questions unlock underneath."
+       : "Same as before: two parts with a pause between them, a code word in the second part, then four quick questions.");
 
   $("#s-v" + slot).innerHTML = `
     <div class="card">
@@ -897,7 +914,7 @@ function sec_html(slot, count, many, frames){
       </div>
     </div>
     <div class="card locked" id="qs${slot}-card">
-      <h2>Three quick questions</h2>
+      <h2>Four quick questions</h2>
       <p class="small">About ${many ? "the set as a whole" : "the video as a whole, both parts together"}.</p>
       <div id="qs${slot}"></div>
       <div style="margin-top:22px">
