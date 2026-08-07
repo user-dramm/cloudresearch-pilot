@@ -426,8 +426,12 @@ async function assign(){
           + "&pairs=" + encodeURIComponent(ids.join(","));
   /* Retry, for the same reason submit() does. Apps Script web apps served to
      anonymous callers intermittently return Google's "Page Not Found" HTML
-     instead of the script's JSON - measured at roughly 1 request in 4 from this
-     deployment. A single attempt therefore drops about a quarter of raters onto
+     instead of the script's JSON. That was measured at roughly 1 request in 4 on the day,
+     but re-measured on 2026-08-07 it was 0 failures in 20, so the rate is variable rather
+     than fixed - and the original figure may have been inflated by not following the 302
+     redirect Apps Script issues, which makes a healthy call look like a failure. The retry
+     stays regardless: three cheap attempts against a dependency that has been seen to
+     fail is worth it, because a single attempt would drop any failing rater onto
      the local hash, which is exactly the imbalance the server assignment exists
      to prevent. Three attempts takes that to a few percent. Retrying is safe:
      the endpoint returns the same pair for a pid it has already seen

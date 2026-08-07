@@ -514,7 +514,11 @@ whether new is ahead *within each pair*; four raters cannot answer that. Launchi
 ~35 puts the smallest cell at 6.4 on average and a thin pair under 1%.
 
 **The retry matters.** This deployment returns Google's HTML error page instead of JSON on
-roughly one anonymous request in four. Every failure drops that rater onto the local hash, and
+roughly one anonymous request in four ON THE DAY IT WAS MEASURED. Re-measured 2026-08-07 it
+was 0 failures in 20, so treat the rate as variable rather than fixed - and note the original
+figure may have been inflated by not following the 302 redirect Apps Script issues, which
+makes a healthy call look like a failure. The retry stays either way: it is three cheap
+attempts against a dependency that has been seen to fail. Every failure drops that rater onto the local hash, and
 at a 25% failure rate balance falls from 72% to 51%. `assign()` therefore retries three times,
 which restores it to 70%. Retrying is safe because the endpoint returns a participant's
 existing assignment (`repeat: true`) rather than issuing a second one.

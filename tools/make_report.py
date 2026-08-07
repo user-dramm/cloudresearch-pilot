@@ -308,9 +308,15 @@ def main():
 
   <h2>Headline</h2>
   <div class="headline">
-    <div><span class="big">{wins} of {len(kept)}</span> clean raters preferred the
-      <strong>recreation</strong>
-      {'' if not kept else '(%.0f%%)' % (wins / len(kept) * 100)}</div>
+    {'<div>No clean rows yet. Rows arrive here once a rater completes and clears the '
+     'gates; anything excluded is listed at the foot of the page with its reason.</div>'
+     if not kept else
+     '<div><span class="big">%d of %d</span> clean raters preferred the '
+     '<strong>recreation</strong> (%.0f%%)</div>' % (wins, len(kept), wins / len(kept) * 100)}
+    {'' if len(kept) >= 20 else
+     '<div style="margin-top:8px;font-size:13px;color:var(--mut)">Too few rows to read '
+     'as a result. The criterion is written for the full sample, so treat this as a '
+     'progress check.</div>' if kept else ''}
   </div>
 
   <h2>Mean ratings, clean rows</h2>

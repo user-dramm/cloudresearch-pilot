@@ -135,6 +135,32 @@ time. Two options:
 
 `tools/assign_sim.py` and `tools/power.py` have the numbers behind both.
 
+## 7b. CLEAR THE ASSIGNMENTS TAB FIRST. This one is easy to miss and expensive.
+
+The endpoint balances by handing each arriving rater whichever pair currently has the
+fewest, and it counts rows in the `assignments` tab. Testing leaves rows there. Measured
+on 2026-08-07, after a day of testing:
+
+```
+{"P1":2,"P2":6,"P3":2,"P4":1,"P5":1}
+```
+
+Twelve phantom raters, six of them on P2. Launch against that and the balancer believes P2
+is already two-thirds full and steers real raters away from it, so P2 finishes short. Clause
+1 needs new ahead in at least 4 of the 5 pairs, which needs every pair to have enough raters
+for "ahead" to mean anything, so an under-filled cell is not cosmetic.
+
+**Before launching: delete every row in the `assignments` tab except the header.** Then
+confirm with one call that the counts are back to zero:
+
+```
+curl -sL "<endpoint>?action=assign&token=embr-pilot-2026-07&pid=PRELAUNCH&pairs=P1,P2,P3,P4,P5"
+```
+
+That prints a `counts` object. Every pair should read 0 or 1. Delete the `PRELAUNCH` row
+afterwards too. Note `curl` needs **-L**: Apps Script 302-redirects to
+`script.googleusercontent.com`, and without it every call looks like a failure.
+
 ## 8. Two runs
 
 **Dry run first:** a separate study, 3 participants, ~$18 with fees. Its job is to test
