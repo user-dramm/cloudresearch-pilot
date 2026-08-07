@@ -180,7 +180,7 @@ def main():
           {why}
         </div>"""
 
-    card_html = []
+    clean_cards, bad_cards = [], []
     for c in sorted(cards, key=lambda x: (bool(x["problems"]), x["pair"] or "", x["pid"] or "")):
         picked = ("RECREATION" if c["winner"] == "new"
                   else "ARCHIVE" if c["winner"] == "old" else "NOT RECORDED")
@@ -212,7 +212,7 @@ def main():
             extra += f"<div class='q'><span class='ql'>closing comment (whole study, not one video)</span>&ldquo;{esc(c['general'])}&rdquo;</div>"
         if c["other"]:
             extra += f"<div class='q'><span class='ql'>anything else</span>&ldquo;{esc(c['other'])}&rdquo;</div>"
-        card_html.append(f"""
+        (bad_cards if c["problems"] else clean_cards).append(f"""
       <article class="card {'bad' if c['problems'] else ''}">
         <header>
           <span class="pid">{esc(c['pid'])}</span>
@@ -307,6 +307,8 @@ def main():
  .card footer {{ margin-top:12px; padding-top:9px; border-top:1px solid var(--line);
                  font-size:12px; color:var(--mut) }}
  ul.drop {{ font-size:13px; color:var(--mut) }}
+ .note-x {{ font-size:14px; color:var(--mut); background:#fff; border:1px solid var(--line);
+            border-radius:8px; padding:12px 14px; margin:0 0 12px }}
 </style>
 <div class="wrap">
   <h1>Rater pilot results</h1>
@@ -342,8 +344,16 @@ def main():
   <th></th></tr>
   {pair_rows}</table></div>
 
-  <h2>Every rater</h2>
-  {''.join(card_html)}
+  <h2>Counted</h2>
+  {''.join(clean_cards) if clean_cards else "<p>None yet.</p>"}
+
+  <h2>Not counted, but here is what they said</h2>
+  <p class="note-x">These rows failed a gate, so they are kept out of the headline and the
+  means. <strong>Nothing they wrote has been thrown away.</strong> The reason sits on each
+  card. Read them: a rater who missed the code word may still have written the most useful
+  sentence in the study, and if several fail the same gate that is telling you something
+  about the instrument rather than about them.</p>
+  {''.join(bad_cards) if bad_cards else "<p>None.</p>"}
 
   <h2>Not counted</h2>
   <ul class="drop">{drop_rows}</ul>
