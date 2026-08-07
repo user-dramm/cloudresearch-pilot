@@ -20,6 +20,10 @@ responses*
 report.html
 report*.html
 
+# The Sheet decode tab, generated from decode_key.json. Same sensitivity as the key:
+# it states in plain words which opaque key is the recreation.
+sheet_lookup.tsv
+
 # Video. Binaries in git history are permanent and GitHub Pages has a ~1 GB
 # soft cap, so clips are hosted elsewhere and never versioned here.
 clips/
