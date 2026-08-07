@@ -185,7 +185,7 @@
           <li>The questions unlock once a video has actually played through. Jumping ahead won't work: the player rewinds you to where you got to.</li>
           <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. There's a box right under the video, so type it in as soon as you see it and you don't have to remember it.</li>
           <li>After each video there are <strong>three quick questions</strong>. The writing, if you want to do any, is all at the end.</li>
-          <li>Your progress is saved as you go. If your browser closes or you lose power, reopen this same link and you'll carry on from where you stopped, without having to rewatch.</li>
+          <li id="li-resume">Your progress is saved as you go. If your browser closes or you lose power, reopen this same link and you'll carry on from where you stopped, without having to rewatch.</li>
           <li>Your written comments matter most. The ratings tell us <em>that</em> something worked; only your own words tell us <em>why</em>, and that is the part we cannot get any other way.</li>
         </ul>
 
@@ -1561,6 +1561,17 @@ $("#btn-retry").addEventListener("click", async () => {
     : (PID ? "Your CloudResearch ID has been received."
            : "Note: we didn't receive a CloudResearch ID. Please make sure you opened this link from the Connect task page.");
   if (needsPid) { $("#btn-start").disabled = true; }
+  /* A preview deliberately does not save (one shared "anon" key, many reviewers), so
+     the resume promise would be a lie there. Swapped rather than removed: a reviewer
+     should still know the real study resumes, since that is part of what they are
+     reviewing. */
+  if (PREVIEW) {
+    const rb = $("#li-resume");
+    if (rb) rb.innerHTML = "In the real study your progress is saved as you go, so a "
+      + "rater who loses power carries on where they stopped. <strong>This preview does "
+      + "not save</strong>, because everyone opens it with the same link and the next "
+      + "person would land in your half-finished session. Walk it in one go.";
+  }
   buildVersionScreen(1); buildVersionScreen(2);
   H2H.forEach(s => renderQ(s, "", $("#h2h-qs")));
   /* Assignment is in; the page can render. */
