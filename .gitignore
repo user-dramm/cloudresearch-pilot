@@ -14,6 +14,12 @@ decode_key.json
 *.tsv
 responses*
 
+# The generated results page. It is built FROM decode_key.json and states in plain
+# words which video is the recreation and which is the archive, per pair, so it is
+# every bit as sensitive as the key itself. The generator is tracked; its output is not.
+report.html
+report*.html
+
 # Video. Binaries in git history are permanent and GitHub Pages has a ~1 GB
 # soft cap, so clips are hosted elsewhere and never versioned here.
 clips/

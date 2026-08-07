@@ -110,13 +110,17 @@ def main():
             rate = num(r.get("s%s_max_rate" % s), 1) or 1
             if rate > 1.25:
                 problems.append("played position %s at %.1fx" % (s, rate))
-            # The per-video comment is OPTIONAL, so its length is never a reason to
-            # reject. Rejecting someone for skipping an optional question would throw
-            # away most of the sample. The text gate is on h2h_why, further down.
-            comment = (r.get("s%s_comment" % s) or "").strip()
-
-            lines.append("  position %s  =  %-18s  key %s   %s video%s"
-                         % (s, label, k, nvid, "" if str(nvid) == "1" else "s"))
+            # NOTE: there is deliberately no per-video comment printed here. The form
+            # has exactly one free-text catch-all, `s1_comment`, and despite the name it
+            # lives in the END block, not in section 1. Printing it under position 1
+            # labelled it as feedback about that video, which it is not, and printed
+            # "(skipped the optional comment)" under position 2 for everyone, because
+            # s2_comment does not exist at all. It is now shown once, at the end, where
+            # the rater actually wrote it. The only genuinely per-video free text is
+            # audio_why, printed below.
+            lines.append("  position %s  =  %-18s  key %s%s"
+                         % (s, label, k,
+                            "   %s videos" % nvid if str(nvid) not in ("1", "?") else ""))
             lines.append("      watched %.0f%% of %.0fs   seeks fwd %s   max speed %.2fx"
                          % (pct, dur, r.get("s%s_seek_fwd" % s, "?"), rate))
             lines.append("      code word: %s" % cw)
@@ -126,10 +130,7 @@ def main():
             nw = field(r, "s%s_audio_why" % s)
             if nw:
                 lines.append("      on the narration: \"%s\"" % str(nw)[:80])
-            if comment:
-                lines.append("      \"%s\"" % (comment[:96] + ("..." if len(comment) > 96 else "")))
-            else:
-                lines.append("      (skipped the optional comment)")
+
 
         wk = r.get("h2h_choice_key", "")
         winfo = KEY.get(wk)
@@ -157,8 +158,15 @@ def main():
         if tot and tot / 1000 < floor:
             problems.append("session only %ds, needs %ds for %ds of video"
                             % (tot / 1000, floor, clips))
+        gen = (r.get("s1_comment") or "").strip()
+        if gen:
+            lines.append("  anything else (about the study as a whole, not one video):")
+            lines.append("      \"%s\"" % (gen[:200] + ("..." if len(gen) > 200 else "")))
+        oth = (r.get("h2h_other") or "").strip()
+        if oth:
+            lines.append("  other comments: \"%s\"" % (oth[:200] + ("..." if len(oth) > 200 else "")))
         lines.append("  session %.0f min   assignment: %s"
-                     % (tot / 60000, r.get("assign_source", "?")))
+                     % (tot / 60000, r.get("assign_source", "?") or "?"))
 
         if a.only_problems and not problems:
             continue

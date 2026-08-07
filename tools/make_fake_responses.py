@@ -22,7 +22,8 @@ def build_headers():
     for s in ("1", "2"):
         h += ["s%s_%s" % (s, f) for f in
               ("overall", "visuals", "audio",
-               "audio_why", "codeword", "comment", "watched_sec", "duration_sec", "watch_pct",
+               "audio_why", "codeword", "comment", "video_count",
+               "watched_sec", "duration_sec", "watch_pct",
                "seek_fwd", "seek_back", "load_errors", "max_rate", "rate_ms", "paste_count")]
     h += ["h2h_choice", "h2h_choice_slot", "h2h_choice_key", "h2h_magnitude", "h2h_why",
           "standby", "h2h_other", "paste_count", "assign_source", "assign_nth", "total_ms",
@@ -43,6 +44,30 @@ MAGNITUDE = ["Barely any difference", "Slightly better", "Clearly better", "Much
 STANDBY   = ["Yes, no reservations", "Yes, with some reservations", "No"]
 COMMENT = ("The slides were clear and the narrator was easy to follow throughout, "
            "though a couple of sections felt a little rushed near the end.")
+
+
+# Read the form version and the pair -> course-code map straight out of the shipped
+# files, so synthetic rows carry the same values a real submission would.
+def _from_form():
+    import re, os
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    try:
+        html = open(os.path.join(here, "index.html"), encoding="utf-8").read()
+        fv = re.search(r'FORM_VERSION\s*=\s*"([^"]+)"', html)
+        fv = fv.group(1) if fv else "unknown"
+    except Exception:
+        fv = "unknown"
+    cc = {}
+    try:
+        cfg = open(os.path.join(here, "config.js"), encoding="utf-8").read()
+        for pid, code in re.findall(r'id:\s*"(P\d)",\s*cc:\s*"([^"]+)"', cfg):
+            cc[pid] = code
+    except Exception:
+        pass
+    return fv, cc
+
+
+FORM_VERSION, CC_OF = _from_form()
 
 
 def main():
@@ -80,8 +105,12 @@ def main():
             r.update({
                 "row_id": "RFAKE%03d" % i, "ts_server": "2026-07-31T12:00:00Z",
                 "ts_client": "2026-07-31T11:58:00Z", "study_tag": "pilot-2026-07",
-                "form_version": "1.0.0", "is_selftest": "no",
-                "participant_id": "CR%05d" % i, "pair_id": pair, "cc_code": "EMBR-CC-XXXXX",
+                # Read from the live config rather than hardcoded, so a sample report
+                # shows the real course code for the pair and the real form version.
+                # Hardcoded placeholders made the sample look broken where it was not.
+                "form_version": FORM_VERSION, "is_selftest": "no",
+                "participant_id": "CR%05d" % i, "pair_id": pair,
+                "cc_code": CC_OF.get(pair, "EMBR-CC-XXXXX"),
                 "slot1_key": sides[slot[1]][0], "slot2_key": sides[slot[2]][0],
                 # Must match the h2h_choice options in index.html. Each side is one
                 # video in two parts - one version of the course.
@@ -115,8 +144,13 @@ def main():
                          "The pauses were in odd places.", "Hard to make out some words."])
 
                 r["s%d_codeword" % s] = sides[side][1]
-                r["s%d_comment" % s] = COMMENT
-                dur = 600
+                # NO per-section comment. The form has exactly one free-text catch-all,
+                # `s1_comment`, and it lives in the END block despite the name; there is
+                # no s2_comment at all. Writing both here made synthetic data look
+                # unlike real data, which is how the decoder's misattribution of that
+                # field went unnoticed.
+                r["s%d_video_count" % s] = 1
+                dur = 543
                 r["s%d_duration_sec" % s] = dur
                 r["s%d_watched_sec" % s] = int(dur * random.uniform(.9, 1.0))
                 r["s%d_watch_pct" % s] = round(r["s%d_watched_sec" % s] / dur, 3)
@@ -125,6 +159,9 @@ def main():
                 r["s%d_load_errors" % s] = 0
                 r["s%d_rate_ms" % s] = random.randint(120_000, 300_000)
                 r["s%d_paste_count" % s] = 0
+            r["s1_comment"] = COMMENT
+            r["assign_source"] = random.choice(
+                ["server", "server", "server", "server", "local"])
             rows.append(r)
 
     with open(a.out, "w", newline="") as f:
