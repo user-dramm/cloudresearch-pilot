@@ -69,20 +69,23 @@ judging them and starts guessing which is which.
 
 > Training video quality comparison, pilot, Aug 2026
 
-**Description**
+**Short description.** This is read BEFORE they accept, so its only job is helping
+someone decide whether to take it: what the task is, how long, what they need, who can do
+it. Mechanics belong in the instructions, which they read after accepting. An earlier
+version of this file repeated the two-part pause, the watch gate and the skip-blocking
+here as well as there, which made a field called "short" three paragraphs long and told
+people twice.
 
 > We make short training videos for people who work in senior care, and we want honest
 > feedback on how they come across. You'll watch two videos, about nine minutes each,
-> and answer four quick questions about each one. At the end you'll say which of the two
-> you thought was better and why.
+> rate each one, and say which you preferred.
 >
-> You don't need any healthcare experience. We want an ordinary viewer's reaction, not
-> an expert review. There are no right answers and we are not testing you.
->
-> Please plan for about 25 minutes in one sitting, on a desktop or laptop with sound.
-> Each video plays in two parts with a short pause between them. The questions stay
-> locked until a video has actually played, and skipping ahead rewinds you, so there is
-> no way to rush it.
+> About 25 minutes in one sitting, on a desktop or laptop with sound. No healthcare
+> experience needed, and there are no right answers. The videos play through in full, so
+> there is no way to rush it.
+
+The last clause earns its place: someone hoping to click through in five minutes
+deselects themselves before costing you a rejection.
 
 **Estimated time:** 25 minutes
 **Payment:** $4.17 (that is $10.01/hour for 25 minutes)
@@ -112,21 +115,31 @@ Keep it minimal. Every screener slows the fill, and this study wants an ordinary
   worker's professional opinion of the *content* is a different question from the one
   being asked, and screening for it would shrink the pool for no gain.
 
-## 6. Instructions on the Connect task page
+## 6. Instructions to display to participants
 
-> Open the study link and keep the tab open until you see the completion screen.
+Read AFTER accepting, so this is the only place the mechanics appear. Everything here is
+something they need to DO or would otherwise misread as a fault.
+
+> Open the study link and keep the tab open until you see the completion screen. You'll
+> need sound.
 >
-> You'll need sound, on a desktop or laptop. Each video plays in two parts with a short
-> black pause in the middle. Keep watching, it hasn't ended.
+> Each video plays in two parts with a short black pause in the middle. Keep watching, it
+> hasn't ended.
 >
-> A code word appears on screen during the second part of each video. There's a box
-> right under the video: type it in as soon as you see it.
+> A code word appears on screen during the second part of each video. There's a box right
+> under the video: type it in as soon as you see it.
 >
-> Your progress is saved as you go. If your browser closes or you lose power, reopen
-> this same link on the same computer and you'll carry on from where you stopped.
+> The questions unlock once a video has played through. Skipping ahead rewinds you, so
+> just let it run.
+>
+> Your progress is saved as you go. If your browser closes or you lose power, reopen this
+> same link on the same computer and you'll carry on from where you stopped.
 >
 > At the end you'll be sent back here automatically. If that doesn't happen, paste the
 > code shown on screen.
+
+The skip line moved here from the description. It reads as a rule where the description
+sat, and as a helpful heads-up here, where someone is about to meet it.
 
 ## 7. How many to order
 
