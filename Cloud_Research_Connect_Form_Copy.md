@@ -88,7 +88,7 @@ other.
 | **Project URL** | the bare Pages URL, no query string | Connect appends `?participantId=` |
 | **Completion** | fixed code `EMBR7K2QX4` | must match `config.js` |
 | **Redirect** | paste the wizard's URL into `config.js` | the more reliable of the two methods |
-| **Devices** | desktop and laptop **only** | under 640px the form replaces itself with "needs a desktop"; do not leave phone or tablet ticked |
+| **Devices** | desktop and laptop **only** | this is the PRIMARY control, not a backup. The form blocks anything under 820px, which covers every phone and portrait tablets, but a landscape iPad at 1024px+ would still load it. Do not leave phone or tablet ticked |
 | **Exclude previous participants** | ticked on every run after the first | stops the dry-run three, and stops anyone taking two pairs |
 
 ## 5. Screening

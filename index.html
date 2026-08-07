@@ -132,7 +132,21 @@
   }
   .hidden{display:none!important}
   .mobile-block{display:none}
-  @media (max-width:640px){
+  /* Raised from 640px to 820px, because an iPad at 768px sailed straight past 640 and got
+     the whole study while this block's own copy promised it stopped "a phone or tablet".
+     820 catches every phone plus tablets in portrait (iPad 768 and 810, Galaxy Tab 712).
+
+     Width ONLY, deliberately. The obvious upgrade is `(pointer:coarse) and (hover:none)`,
+     which catches tablets at any width - but it also caught an emulated 1366x768
+     touchscreen laptop in testing, and blocking a paying rater costs real money and earns
+     a review that slows the next study. Letting a tablet through only degrades a session;
+     blocking a laptop destroys one. So the asymmetry decides it.
+
+     A landscape iPad at 1024px+ still gets through. Connect's desktop-and-laptop-only
+     device setting is the primary control for that, and it is the first thing in the
+     setup doc. This is the second line, for anyone who opens the link outside the task
+     page. */
+  @media (max-width:820px){
     .desktop-only{display:none!important}
     .mobile-block{display:block}
   }
@@ -147,7 +161,8 @@
   <div class="mobile-block">
     <div class="card">
       <h1>This task needs a desktop or laptop</h1>
-      <p>The videos and the feedback questions don't work on a phone or tablet. Please return the task and pick it back up on a computer with sound.</p>
+      <p>The videos and the feedback questions need a bigger screen and sound. Please return the task and pick it back up on a desktop or laptop.</p>
+      <p><strong>Already on a computer?</strong> Your browser window may just be too narrow. Widen it, or maximise it, and this page will carry on.</p>
     </div>
   </div>
 
@@ -256,7 +271,7 @@
    Bump FORM_VERSION on every change that could affect the data, and tag the
    commit with the same string. That pairing is the audit trail.
    =========================================================================== */
-const FORM_VERSION = "1.7.0";
+const FORM_VERSION = "1.7.1";
 
 const CFG = window.STUDY_CONFIG;
 
