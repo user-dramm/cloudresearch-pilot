@@ -63,7 +63,7 @@ A real submission is a row carrying that participant's ID that clears the gates.
 
 > We make short training videos for people who work in senior care, and we want honest
 > feedback on how they come across. You'll watch two videos, about nine minutes each,
-> and answer three quick questions about each one. At the end you'll say which of the two
+> and answer four quick questions about each one. At the end you'll say which of the two
 > you thought was better and why.
 >
 > You don't need any healthcare experience. We want an ordinary viewer's reaction, not
