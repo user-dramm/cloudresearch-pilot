@@ -271,7 +271,7 @@
    Bump FORM_VERSION on every change that could affect the data, and tag the
    commit with the same string. That pairing is the audit trail.
    =========================================================================== */
-const FORM_VERSION = "1.7.1";
+const FORM_VERSION = "1.7.2";
 
 const CFG = window.STUDY_CONFIG;
 
@@ -872,7 +872,7 @@ function sec_html(slot, count, many, frames){
        : `This second set is ${count} videos from a different version of the course. Same as before: watch both, then the questions unlock. There is a different code word in the second one.`)
     : (first
        ? "This video comes in two parts with a short black pause between them. Keep watching, it hasn't ended. A code word appears on screen during the second part: type it in the box below as soon as you see it. Once the video has played through, three quick questions unlock underneath."
-       : "Same as before: two parts with a pause between them, a code word in the second part, then four quick questions.");
+       : "Same as before: two parts with a pause between them, a code word in the second part, then three quick questions.");
 
   $("#s-v" + slot).innerHTML = `
     <div class="card">
@@ -897,7 +897,7 @@ function sec_html(slot, count, many, frames){
       </div>
     </div>
     <div class="card locked" id="qs${slot}-card">
-      <h2>Four quick questions</h2>
+      <h2>Three quick questions</h2>
       <p class="small">About ${many ? "the set as a whole" : "the video as a whole, both parts together"}.</p>
       <div id="qs${slot}"></div>
       <div style="margin-top:22px">

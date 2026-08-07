@@ -116,6 +116,19 @@ note("saveArmed" in form, "resume: saving is armed only after resume reads")
 note("snapshotLive" in form, "resume: live answers are snapshotted")
 note("priorMs + (Date.now() - t0)" in form, "resume: elapsed time carries across")
 
+# --- rater-facing question COUNTS must match the spec ------------------------
+# The heading said "Four quick questions" above three questions after the clarity scale
+# was dropped, and no test noticed because every test counted DOM nodes rather than
+# reading the words. Prose that states a number has to be checked against the number.
+_WORD = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
+_n_scales = len([m for m in re.findall(r'\{\s*id:"[a-z0-9_]+",\s*t:"(scale)"', form)])
+_word = _WORD.get(_n_scales, str(_n_scales))
+_wrong = [w for n, w in _WORD.items() if n != _n_scales
+          and re.search(r"\b%s quick question" % w, form, re.I)]
+note(re.search(r"\b%s quick question" % _word, form, re.I) is not None and not _wrong,
+     "rater-facing text says the right number of questions",
+     "spec has %d scales; text says %s" % (_n_scales, ", ".join(_wrong) or "nothing"))
+
 # --- no em dashes, anywhere -------------------------------------------------
 # A hard house rule, and for the rater-facing text a substantive one: an em dash is
 # one of the tells that reads as machine-written. Checked mechanically because it is
