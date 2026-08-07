@@ -50,11 +50,19 @@ Needs ffmpeg. Pass --ffmpeg if it is not on PATH.
 
 import argparse, json, os, re, subprocess, sys
 
-# Deliberately NOT the words in decode_key.example.json. That file is tracked by
-# git and public, so reusing its words would publish the answers - and knowing a
-# code word lets someone claim they watched when they did not.
-WORD_POOL = ["cobalt", "juniper", "sandbar", "kettle", "driftwood",
-             "saffron", "lattice", "ironwood", "marlin", "plumline"]
+# THE REAL CODE WORDS DO NOT BELONG IN THIS FILE. The repo is public, and a code word
+# is the proof that a rater watched the second half of a video, so publishing one lets
+# somebody claim they watched when they did not.
+#
+# This file used to hold the exact ten words that were burned into the videos, under a
+# comment explaining why they must not be published. It avoided one leak (reusing the
+# words from decode_key.example.json) and created another.
+#
+# The pool below is placeholder filler, used only when --assign does not name a word.
+# Real runs should always pass the words explicitly via --assign, which also records
+# them in the gitignored decode map.
+WORD_POOL = ["alpha", "bravo", "charlie", "delta", "echo",
+             "foxtrot", "golf", "hotel", "india", "juliett"]
 
 VIDEO_RE = re.compile(r"^\s*(\d+)\s*-\s*(.+?)\s*(\(old\))?\.mp4$", re.I)
 
@@ -226,7 +234,7 @@ def main():
                     help="only this course folder (repeatable); default all")
     ap.add_argument("--assign", action="append", default=[], metavar="SPEC",
                     help="explicit per-course assignment, repeatable:\n"
-                         "  --assign '158=old:k5qd:cobalt,new:k2wj:juniper'\n"
+                         "  --assign '999=old:kAAA:examplewordone,new:kBBB:examplewordtwo'\n"
                          "Naming the course, the side, the opaque key and the code word "
                          "together is deliberate. An earlier version took two parallel "
                          "lists positionally and relied on courses being iterated in the "

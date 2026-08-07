@@ -48,9 +48,12 @@ const fails=[]; const ck=(c,l,d='')=>{ if(!c)fails.push(l); console.log((c?'  ok
   ck(cw.insideLocked===false, 'code word box sits OUTSIDE the locked question card');
 
   // Typing the code word, then a paste, which should be counted not blocked
-  await p.locator('#cw1').fill('ironwood');
+  // A made-up word. Never a real one: this file is public, and a code word is
+  // the proof a rater watched the second half.
+  const FAKE_CW = 'testword';
+  await p.locator('#cw1').fill(FAKE_CW);
   const typed=await p.evaluate(()=>document.querySelector('#cw1').value);
-  ck(typed==='ironwood','code word accepts typing');
+  ck(typed===FAKE_CW,'code word accepts typing');
 
   // Validation refuses to advance with a rating missing, and says why on screen
   await p.evaluate(()=>{ // clear the others so validation must fail
@@ -76,7 +79,7 @@ const fails=[]; const ck=(c,l,d='')=>{ if(!c)fails.push(l); console.log((c?'  ok
   await p.waitForTimeout(3500);
   const saved=await p.evaluate(()=>{const k=Object.keys(localStorage).find(x=>x.startsWith('embr_pilot'));
     return k?JSON.parse(localStorage.getItem(k)):null;});
-  ck(saved && saved.d && saved.d.s1_codeword==='ironwood',
+  ck(saved && saved.d && saved.d.s1_codeword===FAKE_CW,
      'work is still saved locally while offline', saved?JSON.stringify(saved.d.s1_codeword):'no state');
   await ctx.setOffline(false);
   ck(errs.length===0,'no js errors through all of it', errs.slice(0,1).join(''));
