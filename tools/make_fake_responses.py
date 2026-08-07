@@ -21,7 +21,7 @@ def build_headers():
          "participant_id", "pair_id", "cc_code", "video_source", "slot1_key", "slot2_key"]
     for s in ("1", "2"):
         h += ["s%s_%s" % (s, f) for f in
-              ("overall", "visuals", "audio", "clarity",
+              ("overall", "visuals", "audio",
                "audio_why", "codeword", "comment", "watched_sec", "duration_sec", "watch_pct",
                "seek_fwd", "seek_back", "load_errors", "max_rate", "rate_ms", "paste_count")]
     h += ["h2h_choice", "h2h_choice_slot", "h2h_choice_key", "h2h_magnitude", "h2h_why",
@@ -103,7 +103,7 @@ def main():
                 side = slot[s]
                 base = 3.1 + (gap if side == "new" else 0.0) + harsh
                 r["s%d_overall" % s] = max(1, min(5, round(random.gauss(base, 0.7))))
-                for f, off in (("visuals", .1), ("audio", .2), ("clarity", -.1)):
+                for f, off in (("visuals", .1), ("audio", .2)):
                     r["s%d_%s" % (s, f)] = max(1, min(5, round(random.gauss(base + off, 0.8))))
 
                 # A low narration score triggers the optional "what was off?" box.

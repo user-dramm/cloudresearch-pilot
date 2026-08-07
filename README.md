@@ -1,4 +1,4 @@
-# CloudResearch pilot — rater instrument
+# CloudResearch pilot - rater instrument
 
 Blind old-vs-new A/B on 5 course pairs, run on CloudResearch Connect. Connect recruits,
 screens, and pays. This repo *is* the study: a single static page that plays the clips,
@@ -31,7 +31,7 @@ this is not a decision that has to block anything - flip it later if you change 
 
 This is the part worth reading slowly, because it is where blind studies usually break.
 
-Every clip has an **opaque key** — `k5qd`, `k2wj` — invented for this study and meaningless
+Every clip has an **opaque key** - `k5qd`, `k2wj` - invented for this study and meaningless
 on its own. `config.js` maps a key to a YouTube ID. The private `decode_key.json` maps the
 same key to `old` or `new`. Only the second file tells you which is which, and it never
 goes in the repo.
@@ -69,7 +69,7 @@ rendering; only step 4 needs finished video.
 1. New Google Sheet, rename the first tab to `responses`.
 2. **Extensions → Apps Script**, paste in `apps_script/Code.gs`, save.
 3. **Deploy → New deployment → Web app.** Execute as **Me**; Who has access **Anyone**.
-   (Connect workers are anonymous — "Anyone with a Google account" will lock them out.)
+   (Connect workers are anonymous - "Anyone with a Google account" will lock them out.)
 4. Copy the `/exec` URL. Open it in a browser: you should see `{"ok":true,...}`.
 5. Paste it into `config.js` as `endpoint`.
 
@@ -123,7 +123,7 @@ Set `videoSource: "youtube"` and fill in `yt` instead of `src`. Then:
   YouTube's queue, not about your pipeline. Check each clip shows 720p in the quality menu
   before you point Connect at anything.
 - Still use `tools/make_clips.sh` for the cut, the concat, and the code word. YouTube
-  re-encodes what you give it, but its encoder is content-adaptive — feeding it ten
+  re-encodes what you give it, but its encoder is content-adaptive - feeding it ten
   identically-encoded masters keeps that variable as quiet as it can be.
 
 #### Which backend is actually better here
@@ -151,7 +151,7 @@ whose clips are genuinely live. Then:
 
 ```bash
 cp decode_key.example.json decode_key.json
-# fill in old/new and the code words — then confirm it will not be committed:
+# fill in old/new and the code words - then confirm it will not be committed:
 git check-ignore -v decode_key.json
 ```
 
@@ -163,12 +163,12 @@ when their clips land and the later wave pools into the same 35 votes.
 
 ### 4. Host it
 
-**GitHub Pages** — free, HTTPS, nothing to sign up for beyond GitHub. Requires a **public**
+**GitHub Pages** - free, HTTPS, nothing to sign up for beyond GitHub. Requires a **public**
 repo; Pages on a private repo needs a paid GitHub plan. Public is fine: the decode key is
 gitignored, and the YouTube IDs reach every participant's browser regardless of where the
 code lives.
 
-**Netlify** — the alternative if you want the repo private anyway. Free plan, no credit
+**Netlify** - the alternative if you want the repo private anyway. Free plan, no credit
 card, deploys straight from a private GitHub repo.
 
 ```bash
@@ -180,7 +180,7 @@ git push -u origin main
 ```
 URL: `https://<org>.github.io/<repo>/`
 
-**Netlify** — pick this instead if you'd rather keep the repo private. Free tier serves
+**Netlify** - pick this instead if you'd rather keep the repo private. Free tier serves
 from a private GitHub repo; connect the repo, no build command, publish directory `/`.
 Drag-and-drop deploy also works if you'd rather not connect anything.
 
@@ -204,7 +204,7 @@ python3 tools/make_fake_responses.py --true-pref 0.50 --out null.csv --seed 3
 python3 analysis.py null.csv --key decode_key.json     # should read NOT VALIDATED
 ```
 
-Running both directions is the cheap proof that the gate isn't rigged — worth showing JK.
+Running both directions is the cheap proof that the gate isn't rigged - worth showing JK.
 
 ### 6. The Connect study
 
@@ -212,10 +212,10 @@ Field-by-field copy is already written in `Cloud_Research_Connect_Form_Copy.md`.
 to get right in the Connect UI:
 
 - **Project URL**: your Pages URL. Connect appends `?participantId=…`; the form reads it.
-  If your URL already has a query string, Connect appends with `&` — test the exact link
+  If your URL already has a query string, Connect appends with `&` - test the exact link
   Connect generates before launching.
 - **Completion method**: set a *fixed* completion code matching `completionCode` in
-  `config.js`. Connect disallows `0`, `1`, `I` and `O` in fixed codes — `EMBR7K2QX4` is
+  `config.js`. Connect disallows `0`, `1`, `I` and `O` in fixed codes - `EMBR7K2QX4` is
   clean. Also copy the **Redirect URL** from the end of the Create-a-Study wizard into
   `redirectUrl`; Connect treats the redirect as the more reliable method, and the form
   will use it while still showing the code as a fallback.
@@ -230,7 +230,7 @@ to get right in the Connect UI:
 The repo is served to the public, so treat everything in it as published.
 
 **Never commit**
-- `decode_key.json` — it is the entire blind.
+- `decode_key.json` - it is the entire blind.
 - Any CSV or export. Participant IDs are pseudonymous but they are still subject data, and
   a repo is the wrong place for them. `.gitignore` covers `*.csv` and `responses*`.
 - Credentials of any kind. The one URL that *must* be public is the Apps Script endpoint.
@@ -257,7 +257,7 @@ the version field is the only thing that will tell you which rows are comparable
 audit trail is a deliverable here, not housekeeping. Commit each `config.js` video-ID change
 separately so you can prove which clips were live when.
 
-**If you accidentally commit the decode key**, deleting it in a later commit is not enough —
+**If you accidentally commit the decode key**, deleting it in a later commit is not enough -
 it stays in history. Rotate instead: invent new opaque keys in `config.js` and
 `decode_key.json`, re-upload nothing, and treat the old keys as burned.
 
@@ -271,47 +271,62 @@ Export the `responses` tab to CSV, then:
 python3 analysis.py responses.csv --key decode_key.json
 ```
 
-It applies the quality gates first and lists every excluded row with the reason — that list
+It applies the quality gates first and lists every excluded row with the reason - that list
 is what you work from when approving or rejecting on Connect. Then it prints the three
 pre-registered clauses separately, plus diagnostics that aren't part of the criterion:
 position effect, the speaker findings, preference magnitude, and inter-rater agreement.
 
 ### How the questions are ordered, and why it isn't arbitrary
 
-The per-video block is a funnel: one broad open question, then the rating scales, then the
-speaker block last. Three deliberate choices, each fixing a measurable defect:
+**Current shape, as of 2026-08-07.** Per video: **three labelled 1-5 scales** and nothing
+else, all four clicks-per-video including the code word. Every open question sits at the end
+of the study, not in the per-video block.
 
-- **The open question comes first.** When closed questions on a topic are asked first,
-  respondents echo those concepts back in the later open answer — so an open question placed
-  after them measures our prompt rather than their reaction.
-- **Every scale point is labelled in words**, not shown as a digit with only the ends named.
-  Fully labelled scales have higher test–retest reliability, and the gain is largest among
-  respondents with less formal education — which is this panel. The submitted value is still
-  1–5, so nothing in this script changes.
-- **The speaker block is last, and nothing follows it.** "Sounded fake" is the only option in
-  the form that reveals what the study tests. It is reached only by a rater who has already
-  said something seemed off, from a tick-any list whose order is randomised (early options in
-  such lists get picked disproportionately) with the other-specify row pinned last.
+| Per video | |
+|---|---|
+| `overall` | Overall, how would you rate this training video? |
+| `audio` | The narration, the voice and how it was delivered |
+| `visuals` | The slides and what was on screen |
+| `audio_why` | shown **only** if `audio` was 1 or 2, and optional even then |
+| code word | a text box under the player, outside the locked card |
 
-That makes **reads-as-fake an unprompted measure**, which is why it is worth more than the
-old "did this sound computer-generated?" checkbox it replaced. `analysis.py` also scans the
-free text for volunteered words like *robotic* or *monotone*, matched on word boundaries —
-matching `ai` as a substring would hit "said", "aid" and "explain".
+Two earlier questions are gone, and the reasons are worth keeping:
+
+- **A separate speaker question** overlapped the narration rating almost entirely, so raters
+  answered the same thing twice.
+- **`clarity` ("How well did it explain things?")**, dropped 2026-08-07. The other three ask
+  about concrete, observable things; that one asked for a judgement about teaching, which
+  read as out of place beside them. `overall` already absorbs it, and the end-of-study
+  written answers are a better route to it than a fourth identical scale.
+
+What the ordering still buys:
+
+- **Every scale point is labelled in words**, not a digit with only the ends named. Fully
+  labelled scales have higher test-retest reliability, and the gain is largest among
+  respondents with less formal education, which is this panel. The submitted value is still
+  1-5, so nothing in the analysis changes.
+- **No question anywhere names what is being tested.** The conditional narration follow-up is
+  a free text box, not a list we supplied, so "it sounded robotic" is **volunteered rather
+  than prompted** - reached only by a rater who has already scored the narration low.
+  `analysis.py` scans the free text for words like *robotic* or *monotone* on word boundaries;
+  matching `ai` as a substring would hit "said", "aid" and "explain".
 
 The head-to-head stays a **forced binary choice** with no tie option: paired comparison is
 more discriminative than rating each video alone, and clauses 1 and 2 are computed from that
 one field. A tie option would create a third category the binomial cannot consume. Instead
-the follow-up asks **how much better**, which is how a genuine tie gets recorded — and
+the follow-up asks **how much better**, which is how a genuine tie gets recorded - and
 `analysis.py` re-runs the pooled preference excluding everyone who said "barely any
 difference", as the honest check on how much of the margin is coin-flips.
 
-The gates it enforces: selftest rows, missing or duplicate participant IDs, under 85%
-watched on either clip, a wrong code word, a comment under 40 characters, playback faster
-than 1.25x, a missing head-to-head choice, and a session shorter than 85% of the two clips
-combined. That last one is **derived from the row**, not fixed: `s1_duration_sec` and
+The gates it enforces: selftest rows, rows from another study tag, missing or duplicate
+participant IDs, under 85% watched on either clip, a wrong code word, playback faster than
+1.25x, a missing head-to-head choice, and a session shorter than 85% of the two clips
+combined. **There is deliberately no text-length gate.** Every open question is optional, so
+a length gate would exclude the entire cohort; that mistake was made twice and caught both
+times by re-running the analysis with all free text blanked (35/35 still pass). That last one is **derived from the row**, not fixed: `s1_duration_sec` and
 `s2_duration_sec` ride along in every response, so the floor tracks whatever was actually
 served. The flat 480 s remains only as a backstop for rows where duration failed to record.
-`--include-excluded` re-runs with all rows as a sensitivity check — if the verdict flips
+`--include-excluded` re-runs with all rows as a sensitivity check - if the verdict flips
 when you include the junk, that belongs in the writeup.
 
 **Read the thresholds honestly.** The locked criterion says "≥65% AND exact binomial
@@ -322,7 +337,7 @@ the data lands.
 **Clause 1 needs five pairs to be satisfiable at all.** "New ahead in ≥ 4 of 5 pairs" cannot
 be met by a three-pair wave, however lopsided the result: three pairs won out of three is
 still 3, and 3 < 4. A synthetic three-pair run at 80% preference, winning every pair, prints
-NOT VALIDATED — see `proof/analysis_gate_proof.txt` for the shape of the output. So either all
+NOT VALIDATED - see `proof/analysis_gate_proof.txt` for the shape of the output. So either all
 five pairs run before the verdict is read, or clause 1 gets restated **with JK, before any
 data exists**. Restating it afterwards is moving the goalposts, and it would void the point of
 pre-registering.
@@ -461,13 +476,13 @@ Reproduce any of the above with `tools/assign_sim.py`.
 The monthly design is monadic-plus-anchor rather than paired, so:
 
 - `config.js` becomes one entry per new course plus one permanent `anchor` entry. If you
-  self-host, the anchor clip stays at one fixed URL for 2-3 quarters — do not re-encode it,
+  self-host, the anchor clip stays at one fixed URL for 2-3 quarters - do not re-encode it,
   since a re-encode silently changes the benchmark everything is normalised against.
-- `index.html` drops the head-to-head screen and shows two clips — the course and the
-  anchor — in randomised order.
+- `index.html` drops the head-to-head screen and shows two clips - the course and the
+  anchor - in randomised order.
 - `analysis.py` swaps the binomial for anchor-normalised scoring: subtract each rater's
   anchor score from their course score, then test against the benchmark bar.
 
-Everything else — the gate, the code words, the endpoint, the Sheet, the hosting, the git
-discipline — carries over unchanged. That reuse is a real part of the pilot's value: the
+Everything else - the gate, the code words, the endpoint, the Sheet, the hosting, the git
+discipline - carries over unchanged. That reuse is a real part of the pilot's value: the
 $266 buys the instrument as well as the answer.

@@ -1,4 +1,4 @@
-# CloudResearch Connect — everything needed to launch
+# CloudResearch Connect: everything needed to launch
 
 Field-by-field copy plus the settings that break the study if they are wrong.
 Verified against Connect's own documentation, not from memory:
@@ -13,7 +13,7 @@ Verified against Connect's own documentation, not from memory:
 
 Connect appends its participant identifier to your Project URL as **`participantId`**.
 The form reads exactly that (`index.html`, `const PID = url.get("participantId")`), and
-**the Start button is disabled without it** — deliberately, because a rater with no ID
+**the Start button is disabled without it**, deliberately, because a rater with no ID
 cannot be matched to a Connect submission or paid.
 
 So the Project URL must be the bare page, with no query string of its own:
@@ -24,7 +24,7 @@ https://user-dramm.github.io/cloudresearch-pilot/
 
 Connect then sends people to `...?participantId=XXXX`. If you ever add your own
 parameter to the Project URL, check the result is `?a=b&participantId=...` and not two
-`?` characters — that is the failure mode, and it silently disables Start for everyone.
+`?` characters. That is the failure mode, and it silently disables Start for everyone.
 
 **Test it before launching** by opening the exact link Connect generates. Not a link
 you typed by hand.
@@ -33,7 +33,7 @@ The form also captures `assignmentId` and `projectId` if present. Both optional 
 docs, but `assignmentId` is unique per participant per session, which makes matching a
 Sheet row to a Connect submission unambiguous if someone disputes a rejection.
 
-## 2. Completion — belt and braces
+## 2. Completion: belt and braces
 
 Connect needs either an end-of-study redirect or a completion code. This study uses
 **both**, because either one alone has a failure mode.
@@ -53,7 +53,7 @@ A real submission is a row carrying that participant's ID that clears the gates.
 
 **Internal name**
 
-> Training video quality comparison — pilot, Aug 2026
+> Training video quality comparison, pilot, Aug 2026
 
 **Title participants see**
 
@@ -63,7 +63,7 @@ A real submission is a row carrying that participant's ID that clears the gates.
 
 > We make short training videos for people who work in senior care, and we want honest
 > feedback on how they come across. You'll watch two videos, about nine minutes each,
-> and answer four quick questions about each one. At the end you'll say which of the two
+> and answer three quick questions about each one. At the end you'll say which of the two
 > you thought was better and why.
 >
 > You don't need any healthcare experience. We want an ordinary viewer's reaction, not
@@ -93,7 +93,7 @@ other.
 
 ## 5. Screening
 
-Keep it minimal — every screener slows the fill, and this study wants an ordinary viewer.
+Keep it minimal. Every screener slows the fill, and this study wants an ordinary viewer.
 
 - Location: United States
 - Language: fluent English
@@ -107,7 +107,7 @@ Keep it minimal — every screener slows the fill, and this study wants an ordin
 > Open the study link and keep the tab open until you see the completion screen.
 >
 > You'll need sound, on a desktop or laptop. Each video plays in two parts with a short
-> black pause in the middle — keep watching, it hasn't ended.
+> black pause in the middle. Keep watching, it hasn't ended.
 >
 > A code word appears on screen during the second part of each video. There's a box
 > right under the video: type it in as soon as you see it.
@@ -140,7 +140,7 @@ time. Two options:
 **Dry run first:** a separate study, 3 participants, ~$18 with fees. Its job is to test
 the cost model and the instrument against reality before the main spend. Afterwards
 check the Sheet for three rows with sensible watch percentages, correct code words,
-sessions around 25 minutes, and — the thing to actually watch — whether anyone wrote
+sessions around 25 minutes, and (the thing to actually watch) whether anyone wrote
 anything in the optional boxes. If the written feedback is thin, that is the moment to
 make the "why" question required for the raters who see it.
 
@@ -156,6 +156,6 @@ shortlist with a reason per row. Work from that.
 playback speed, session impossibly short.
 
 **Never reject on someone's rating.** A rater who preferred the archived version is the
-finding — it is the entire reason to run a blind study. Rejecting it is dishonest and
+finding. It is the entire reason to run a blind study. Rejecting it is dishonest and
 self-defeating: unfair rejections follow you, and Connect participants talk, so your
 next study fills slower.

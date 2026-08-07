@@ -1,5 +1,5 @@
 /* ============================================================================
-   STUDY CONFIG — Embrace Pilot 2026-07, blind old-vs-new, 5 CC course pairs
+   STUDY CONFIG: Embrace Pilot 2026-07, blind old-vs-new, 5 CC course pairs
    ----------------------------------------------------------------------------
    This file is PUBLIC (it ships to the participant's browser). Nothing in here
    may reveal which version is old and which is new. Version keys are opaque on
@@ -43,7 +43,7 @@ window.STUDY_CONFIG = {
   redirectUrl: "",
 
   /* Fraction of each clip that must actually play before questions unlock.
-     Only genuine playback counts — seeking forward earns no credit. */
+     Only genuine playback counts, and seeking forward earns no credit. */
   watchGate: 0.90,
 
   /* Minimum characters for the free-text answers (quality gate). */

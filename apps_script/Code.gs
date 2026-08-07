@@ -9,7 +9,7 @@
 // ============================================================================
 
 /**
- * Embrace CloudResearch pilot — response collector.
+ * Embrace CloudResearch pilot: response collector.
  *
  * Setup (5 minutes):
  *   1. Create a Google Sheet. Rename the first tab to "responses".
@@ -58,7 +58,7 @@ function book_() {
   return ss;
 }
 
-/** Stable column order — this is what analysis.py expects from the CSV export. */
+/** Stable column order: this is what analysis.py expects from the CSV export. */
 var HEADERS = [
   "row_id","ts_server","ts_client","study_tag","form_version","is_selftest",
   "participant_id","pair_id","cc_code","video_source","slot1_key","slot2_key",

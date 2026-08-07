@@ -50,15 +50,20 @@ MAX_PLAYBACK_RATE = 1.25   # video seconds per real second; >1 means sped-up pla
 # not have played them both. The flat floor remains as a backstop for rows where
 # duration failed to record.
 
-# The four rating dimensions, and how to print them. FOUR, not five: a fifth item
+# The three rating dimensions, and how to print them. THREE, not five: extra items
 # separating "script" from "content" would not have separated, because halo is a
 # rater's failure to discriminate between conceptually distinct attributes and it
-# worsens when raters are tired or the descriptors are vague. `clarity` replaced
-# `pacing`, and is read through field() so it works before the Apps Script has been
-# redeployed with a column for it.
-METRICS = ("overall", "audio", "visuals", "clarity")
-METRIC_LABEL = {"overall": "overall", "audio": "voice", "visuals": "on-screen",
-                "clarity": "clarity"}
+# worsens when raters are tired or the descriptors are vague.
+#
+# "clarity" ("How well did it explain things?") was dropped from the form on
+# 2026-08-07. The three that remain all ask about something concrete and observable -
+# the video as a whole, the voice, the screen - where clarity asked for a judgement
+# about teaching, which read as out of place and which `overall` already absorbs.
+# Nothing here needs it to be absent: every metric is read through field(), so a
+# column that stops arriving simply comes back empty. It is left out of METRICS so
+# the printed tables do not carry a permanently blank row.
+METRICS = ("overall", "audio", "visuals")
+METRIC_LABEL = {"overall": "overall", "audio": "voice", "visuals": "on-screen"}
 
 # ---- narration / reads-as-artificial ---------------------------------------
 # The separate speaker question is gone: it overlapped the narration rating almost
@@ -258,8 +263,8 @@ def main():
             side = KEY[k]["version"]
             # `metric`, not `field` - `field()` is a function in this module now,
             # and shadowing it here would break every lookup below it.
-            # Read through field() so a metric that has no column yet, like clarity,
-            # is picked up out of the extra_json overflow instead of coming back empty.
+            # Read through field() so a metric with no dedicated column is picked up
+            # out of the extra_json overflow instead of coming back empty.
             for metric in METRICS:
                 rec["%s_%s" % (side, metric)] = num(field(r, "s%s_%s" % (s, metric)))
 
@@ -374,11 +379,15 @@ def main():
                 print("        ... and %d more" % (len(said) - 6))
 
     flat = sum(1 for x in recs if x.get("old_flat") and x.get("new_flat"))
-    print("  straightlining      %d/%d (%.0f%%) gave all four ratings identical on BOTH"
+    print("  straightlining      %d/%d (%.0f%%) gave all three ratings identical on BOTH"
           " videos" % (flat, n, flat / n * 100))
     if flat:
         print("      that pattern can be honest, but it is also what answering without")
         print("      reading looks like. Re-run with those rows excluded if it is a big share.")
+        print("      NOTE: this is a weaker signal than it was. With the clarity scale")
+        print("      dropped it takes three identical ratings rather than four, and three")
+        print("      matching by chance is about five times more likely than four. Expect")
+        print("      more flags here, and read them as worth a look rather than damning.")
 
     # What specifically was wrong with the speaker, per side. This is the whole
     # reason the probe exists: not how many disliked the voice, but what about it.

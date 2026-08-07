@@ -162,11 +162,11 @@
          endpoint before it can render the videos, and that call has been measured at
          anything from 2 to 33 seconds. Without this the page just sits there looking
          broken, and a rater who waits 30 seconds on a dead page returns the task. -->
-    <div id="booting" class="note">Setting up your videos — one moment.</div>
+    <div id="booting" class="note">Setting up your videos. One moment.</div>
     <!-- Shown only when a session was restored. Worth telling them: someone who does
          not realise their progress came back will start over unnecessarily. -->
     <div id="resume-note" class="note hidden">
-      <strong>Welcome back.</strong> We picked up where you left off — your answers and
+      <strong>Welcome back.</strong> We picked up where you left off. Your answers and
       how much you had watched are both saved. Carry on from here.
     </div>
     <div class="rail" id="rail"></div>
@@ -176,21 +176,21 @@
       <div class="card">
         <p class="eyebrow">Before you start</p>
         <h1>Watch two short training videos and tell us what you think</h1>
-        <p class="lede">You'll watch two short training videos, answer some questions, then watch two more and answer the same questions again. At the end you'll say which pair you thought was better and why.</p>
+        <p class="lede">You'll watch two short training videos, about 9 minutes each, and answer a few quick questions about each one. At the end you'll say which of the two you thought was better and why.</p>
 
         <h2>What to expect</h2>
         <ul>
-          <li>Two videos, about 9 minutes each. Plan for roughly 25 minutes altogether.</li>
-          <li>Each video runs in <strong>two parts with a short black pause between them</strong>. Keep watching when the screen goes dark — it says "Part 2" and carries on.</li>
+          <li>Plan for roughly 25 minutes altogether, in one sitting.</li>
+          <li>Each video runs in <strong>two parts with a short black pause between them</strong>. Keep watching when the screen goes dark. It says "Part 2" and carries on.</li>
           <li>The questions unlock once a video has actually played through. Jumping ahead won't work: the player rewinds you to where you got to.</li>
-          <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. There's a box right under the video — type it in as soon as you see it, so you don't have to remember it.</li>
-          <li>After each video there are <strong>four quick questions</strong>. The writing, if you want to do any, is all at the end.</li>
-          <li>Your progress is saved as you go. If your browser closes or you lose power, reopen this same link and you'll carry on from where you stopped — you won't have to rewatch.</li>
+          <li>Partway through the <strong>second part</strong> of each video a short <strong>code word</strong> appears on screen. There's a box right under the video, so type it in as soon as you see it and you don't have to remember it.</li>
+          <li>After each video there are <strong>three quick questions</strong>. The writing, if you want to do any, is all at the end.</li>
+          <li>Your progress is saved as you go. If your browser closes or you lose power, reopen this same link and you'll carry on from where you stopped, without having to rewatch.</li>
           <li>Your written comments matter most. The ratings tell us <em>that</em> something worked; only your own words tell us <em>why</em>, and that is the part we cannot get any other way.</li>
         </ul>
 
         <div class="note">
-          Answer honestly — there are no right or wrong opinions, and any view is accepted.
+          Answer honestly. There are no right or wrong opinions, and any view is accepted.
           Rushed or copy-pasted answers may be rejected. At the end you'll get a completion
           code to paste back into CloudResearch Connect.
         </div>
@@ -223,7 +223,7 @@
     <section id="s-done" class="screen hidden">
       <div class="card">
         <p class="eyebrow">Saved</p>
-        <h1>Thank you — your feedback is recorded</h1>
+        <h1>Thank you, your feedback is recorded</h1>
         <p>Copy this completion code and paste it into CloudResearch Connect to submit the task.</p>
         <div class="code" id="done-code"></div>
         <p class="small hidden" id="done-redirect">Sending you back to CloudResearch Connect now. If nothing happens in a few seconds, paste the code above instead.</p>
@@ -252,11 +252,11 @@
 <script src="config.js"></script>
 <script>
 /* ===========================================================================
-   Embrace CloudResearch pilot — rater instrument
+   Embrace CloudResearch pilot: rater instrument
    Bump FORM_VERSION on every change that could affect the data, and tag the
    commit with the same string. That pairing is the audit trail.
    =========================================================================== */
-const FORM_VERSION = "1.6.0";
+const FORM_VERSION = "1.7.0";
 
 const CFG = window.STUDY_CONFIG;
 
@@ -514,24 +514,27 @@ const QS = [
      largest among respondents with less formal education, which is this panel. The
      submitted value is still 1-5, so clause 3 of the criterion is unaffected.
 
-     KNOWN TRADE: four scales in a row with identical anchors is the straightlining
+     KNOWN TRADE: several scales in a row with identical anchors is the straightlining
      shape. The code word question used to break the run; ease of use won instead. So
-     rather than design around it invisibly, analysis.py DETECTS it - a row whose four
+     rather than design around it invisibly, analysis.py DETECTS it - a row whose
      ratings are identical on both videos is flagged. A measured risk beats a hidden
-     one. */
+     one. Dropping the fourth scale in Aug 2026 shortened the run to three. */
   { id:"overall", t:"scale", q:"Overall, how would you rate this training video?", labels:SCALE5 },
   { id:"audio",   t:"scale", q:"The narration - the voice and how it was delivered", labels:SCALE5 },
 
   { id:"visuals", t:"scale", q:"The slides and what was on screen", labels:SCALE5 },
-  /* "Explained" rather than "content": a rater can judge whether something was
-     explained well, whereas asking about content invites them to rate the subject
-     matter, which is identical across the two versions and not what is being tested. */
-  { id:"clarity", t:"scale", q:"How well did it explain things?", labels:SCALE5 },
 
-  /* Placed after all four ratings, not between them. Only raters who scored the
+  /* Removed 2026-08-07: a fourth scale, "How well did it explain things?". It read as
+     out of place next to the other three, which ask about concrete, observable things
+     (the video as a whole, the voice, the screen) where this one asked for a judgement
+     about teaching. Overall already absorbs it, and the end-of-study written answers
+     are a better route to it than a fifth identical 1-5 scale. Dropping it also
+     shortens the straightlining run from four scales to three. */
+
+  /* Placed after all three ratings, not between them. Only raters who scored the
      narration 1 or 2 ever see it, and it is optional even then - someone who gave it a
      low score has already told us the useful part; this only asks what it was. Sitting
-     mid-block it interrupted an otherwise uninterrupted run of four clicks.
+     mid-block it interrupted an otherwise uninterrupted run of clicks.
      This is now the only route to "it sounded robotic" or "the pauses were odd", and
      the words are volunteered rather than picked off a list we supplied. */
   { id:"audio_why", t:"short", optional:true,
@@ -590,7 +593,7 @@ const H2H = [
      and the code word. */
   { id:"h2h_why", t:"area", optional:true,
     q:"Can you tell us why it was clearly better?",
-    hint:"Optional, but this is the most useful thing you can give us — even a sentence.",
+    hint:"Optional, but this is the most useful thing you can give us. Even a sentence helps.",
     showIf:{ id:"h2h_magnitude", vals:["Clearly better","Much better"] } },
 
   /* Moved here from the per-video block, where it was asked twice. It invites a
@@ -616,7 +619,7 @@ const H2H = [
   /* Final catch-all. Reuses the existing h2h_other column. */
   { id:"h2h_other", t:"area", optional:true,
     q:"Anything we didn't ask about that you'd like to share?",
-    hint:"Optional — and genuinely useful. Written feedback tells us things the ratings can't." }
+    hint:"Optional, and genuinely useful. Written feedback tells us things the ratings can't." }
 ];
 
 /* ---------- question rendering ---------- */
@@ -699,7 +702,7 @@ function renderQ(spec, prefix, host){
       const need = spec.min();
       const paint = () => {
         const n = el.value.trim().length;
-        c.textContent = n >= need ? "Thank you — that's plenty." : `${n} of ${need} characters minimum`;
+        c.textContent = n >= need ? "Thank you, that's plenty." : `${n} of ${need} characters minimum`;
         c.classList.toggle("ok", n >= need);
       };
       el.addEventListener("input", paint); paint();
@@ -850,10 +853,10 @@ function sec_html(slot, count, many, frames){
      The `many` branch survives for the case of a section served as separate files. */
   const intro = many
     ? (first
-       ? `This first set has ${count} videos from the same course. Watch them both, then the questions below unlock. A code word appears on screen during the second one — we ask for it afterwards.`
+       ? `This first set has ${count} videos from the same course. Watch them both, then the questions below unlock. A code word appears on screen during the second one, and we ask for it afterwards.`
        : `This second set is ${count} videos from a different version of the course. Same as before: watch both, then the questions unlock. There is a different code word in the second one.`)
     : (first
-       ? "This video comes in two parts with a short black pause between them — keep watching, it hasn't ended. A code word appears on screen during the second part: type it in the box below as soon as you see it. Once the video has played through, four quick questions unlock underneath."
+       ? "This video comes in two parts with a short black pause between them. Keep watching, it hasn't ended. A code word appears on screen during the second part: type it in the box below as soon as you see it. Once the video has played through, three quick questions unlock underneath."
        : "Same as before: two parts with a pause between them, a code word in the second part, then four quick questions.");
 
   $("#s-v" + slot).innerHTML = `
@@ -1179,7 +1182,7 @@ function paintGate(slot, i){
     $("#gate" + vk(slot, i)).classList.add("open");
     const rest = sect.vids.filter(v => !v.open).length;
     $("#gate-msg" + vk(slot, i)).textContent = rest
-      ? "Done with this one — " + (rest === 1 ? "one more to watch" : rest + " more to watch")
+      ? "Done with this one. " + (rest === 1 ? "One more to watch" : rest + " more to watch")
       : "Thanks for watching";
     /* Hand over to the next video in the sequence, pausing this one first so it is
        not still running underneath while the rater starts the next.
@@ -1477,7 +1480,7 @@ async function submit(){
   const body = JSON.stringify(payload());
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      // text/plain keeps this a "simple" CORS request — no preflight, which
+      // text/plain keeps this a "simple" CORS request, so no preflight, which
       // Apps Script cannot answer.
       /* 20 seconds here, not 6. A slow assign costs a few seconds of waiting; a lost
          submit costs a rater their payment and us the data, so it is worth waiting
@@ -1543,7 +1546,7 @@ $("#btn-retry").addEventListener("click", async () => {
          <p>This preview has no video IDs filled in, so there is nothing to play. Every
          pair in <code>config.js</code> is still a placeholder.</p></div>`
       : `<div class="card"><h1>This study isn't accepting responses right now</h1>
-         <p>Please return the task — you won't be penalised. Sorry for the trouble.</p></div>`;
+         <p>Please return the task. You won't be penalised, and sorry for the trouble.</p></div>`;
     return;
   }
   /* A paid rater without a CloudResearch id cannot be paid or matched to a task, so

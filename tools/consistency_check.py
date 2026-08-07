@@ -77,7 +77,7 @@ note('"Barely any difference"' in an,
 am = re.search(r'METRICS = \((.*?)\)', an, re.S)
 metrics = [s.strip().strip('"') for s in am.group(1).split(",") if s.strip()] if am else []
 ids = form_ids()
-note(sorted(metrics) == sorted(["overall", "audio", "visuals", "clarity"]),
+note(sorted(metrics) == sorted(["overall", "audio", "visuals"]),
      "analysis METRICS", str(metrics))
 for mt in metrics:
     note(mt in ids, "form asks for metric %r" % mt)
@@ -115,6 +115,26 @@ for pub in ("config.js", "demo/config.js", "apps_script/Code.gs", "decode_key.ex
 note("saveArmed" in form, "resume: saving is armed only after resume reads")
 note("snapshotLive" in form, "resume: live answers are snapshotted")
 note("priorMs + (Date.now() - t0)" in form, "resume: elapsed time carries across")
+
+# --- no em dashes, anywhere -------------------------------------------------
+# A hard house rule, and for the rater-facing text a substantive one: an em dash is
+# one of the tells that reads as machine-written. Checked mechanically because it is
+# exactly the kind of thing that creeps back in one edit at a time.
+import glob as _glob
+_dash_hits = []
+for _p in sorted(set(_glob.glob("*.html") + _glob.glob("*.js") + _glob.glob("*.py")
+                     + _glob.glob("*.md") + _glob.glob("demo/*.html")
+                     + _glob.glob("demo/*.js") + _glob.glob("tools/*.py")
+                     + _glob.glob("apps_script/*.gs"))):
+    try:
+        _txt = open(_p, encoding="utf-8").read()
+    except Exception:
+        continue
+    _n = _txt.count("\u2014")
+    if _n:
+        _dash_hits.append("%s x%d" % (_p, _n))
+note(not _dash_hits, "no em dashes in any tracked text file",
+     "; ".join(_dash_hits) if _dash_hits else "")
 
 print("=" * 74)
 print("CONSISTENCY CHECK")

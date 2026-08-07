@@ -1,5 +1,5 @@
 /* ============================================================================
-   DEMO CONFIG — a preview build for colleagues to walk. NOT the study.
+   DEMO CONFIG: a preview build for colleagues to walk. NOT the study.
    ----------------------------------------------------------------------------
    Lives at /demo/ so it can never be confused with the real instrument at the
    site root. Deliberately different from the real config.js in four ways:
@@ -59,7 +59,7 @@ window.STUDY_CONFIG = {
     "so walk it in one go - the real study does resume if a rater loses power, but " +
     "saving here would drop the next person who opens this shared link into your " +
     "half-finished session. Everything else is exactly what a paid " +
-    "rater gets — the same videos, the watch gate, the skip-blocking, the black " +
+    "rater gets: the same videos, the watch gate, the skip-blocking, the black " +
     "“Part 2” pause halfway through each video, and every question. Your " +
     "answers are tagged as a preview and excluded from the analysis automatically.",
 

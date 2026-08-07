@@ -7,7 +7,7 @@ you can paste straight in.
 deployed and verified working for anonymous users, and the live URL is already wired into
 `config.js`. Everything below step 1 is still to do.
 
-**Videos are being made last, on purpose.** That's the right order — every other piece works
+**Videos are being made last, on purpose.** That's the right order - every other piece works
 with placeholder video IDs, so when the clips land you launch the same hour instead of starting
 a scramble. The one exception is the *audit* in step 2, which happens now.
 
@@ -27,16 +27,16 @@ unlisted), **a spreadsheet** (Google Sheets, already done).
 
 ## The five courses
 
-Each is shown twice — the current recreated version and the archived prior version of the same
+Each is shown twice - the current recreated version and the archived prior version of the same
 title. Same course code for both; which is which is recorded only in `decode_key.json`, which
 never leaves your machine.
 
 | Pair | Course | Clip labels | Ready? |
 |---|---|---|---|
-| P1 | EMBR-CC-00051 | `k3ta` `k9vm` | No — new videos were unrendered Synthesia drafts |
+| P1 | EMBR-CC-00051 | `k3ta` `k9vm` | No - new videos were unrendered Synthesia drafts |
 | P2 | EMBR-CC-00158 | `k5qd` `k2wj` | Yes |
 | P3 | EMBR-CC-00162 | `k8rn` `k4zf` | Yes |
-| P4 | EMBR-CC-00175 | `k6hb` `k1ps` | No — new videos were deleted |
+| P4 | EMBR-CC-00175 | `k6hb` `k1ps` | No - new videos were deleted |
 | P5 | EMBR-CC-00254 | `k7cy` `k0lg` | Yes |
 
 From each version you use **module 1 + module 3 only**, joined into one ~10-minute clip. So:
@@ -58,13 +58,13 @@ No. Three layers, tested adversarially:
 
 Clicking Continue without watching, stripping the lock off with dev tools, and calling the
 submit button directly were all tested and all fail. What no software stops is someone playing
-it and looking away — the code word catches much of that, the required written comment most of
+it and looking away - the code word catches much of that, the required written comment most of
 the rest.
 
 ## How raters get spread evenly across the pairs
 
 Not by chance. If each browser picked at random, across 35 raters you'd get a clean 7-7-7-7-7
-about **0.1%** of the time and some pair would land 4 or fewer about **61%** of the time — bad,
+about **0.1%** of the time and some pair would land 4 or fewer about **61%** of the time - bad,
 because the criterion needs new ahead in at least 4 of 5 pairs.
 
 So the endpoint assigns instead. Each rater gets whichever pair currently has the fewest
@@ -82,7 +82,7 @@ did, so a flaky network costs balance, never a session.
 
 # The steps
 
-## 1. Google Sheet and endpoint — **DONE**
+## 1. Google Sheet and endpoint - **DONE**
 
 Deployed, verified anonymous-accessible, and already in `config.js`.
 
@@ -91,7 +91,7 @@ Deployed, verified anonymous-accessible, and already in `config.js`.
 
 ## 2. Find the old versions · **YOU + DAMIEN** · do this now
 
-The videos live in Synthesia, not in Talon — Talon holds the course artifacts, not the renders.
+The videos live in Synthesia, not in Talon - Talon holds the course artifacts, not the renders.
 So this isn't a Claude Code task, and it's the one item that can change the plan rather than
 just the schedule.
 
@@ -119,7 +119,7 @@ Then download everything into one folder, named so the pair and side are unambig
 > Run `tools/check_sources.sh` on FOLDER_PATH and tell me what it flags.
 
 This is the check your plan doesn't currently have, and it protects the whole result. If the old
-version of a course is 480p and the new one is 1080p, raters will reliably prefer the new one —
+version of a course is 480p and the new one is 1080p, raters will reliably prefer the new one -
 and you'll have measured an upgrade in render settings rather than the pipeline. That result
 would *pass* the pre-registered criterion and be worthless.
 
@@ -130,11 +130,11 @@ be either fixed by sourcing a better copy or stated plainly in the writeup as a 
 ## 3. Repo and hosting · **CLAUDE CODE** · you do nothing
 
 > Create a public GitHub repo for this folder, push it, and enable GitHub Pages from main/root.
-> The Apps Script endpoint is already set in `config.js` — don't change it. Then run both
+> The Apps Script endpoint is already set in `config.js` - don't change it. Then run both
 > fake-data tests from the README and show me the output, and give me the live Pages URL.
 
 The tests must print **VALIDATED** on the strong-win run and **NOT VALIDATED** on the null run.
-Keep that output — it's what answers "how do we know this wasn't rigged."
+Keep that output - it's what answers "how do we know this wasn't rigged."
 
 Public repo is fine: the decode key is gitignored, and the video IDs reach every rater's
 browser anyway. Nothing sensitive is in there.
@@ -145,7 +145,7 @@ Then walk the form yourself, before any video exists:
 https://YOUR-PAGES-URL/?participantId=TEST001&selftest=1&pair=P2
 ```
 
-The videos won't play yet — the IDs are placeholders. `selftest=1` tags the row so the analysis
+The videos won't play yet - the IDs are placeholders. `selftest=1` tags the row so the analysis
 drops it automatically.
 
 ## 4. Build the CloudResearch study · **YOU** · 20 minutes · can happen before the videos
@@ -162,17 +162,17 @@ clips exist. Field-by-field copy is in `Cloud_Research_Connect_Form_Copy.md`. Fo
   participants* ticked.
 
 Note the account split: the study lives on the CloudResearch login, the data lands in your
-Sheet. Two handoffs — they send you the Redirect URL, you send them the exclusion list at
+Sheet. Two handoffs - they send you the Redirect URL, you send them the exclusion list at
 approval time.
 
 ## 5. Cut the clips · **CLAUDE CODE** · once the module files exist
 
 Put all the module files in one folder, then:
 
-> The module files are in FOLDER_PATH — module 1 and module 3 of the old and new version of
+> The module files are in FOLDER_PATH - module 1 and module 3 of the old and new version of
 > each course. Run `tools/make_clips.sh` to build the 10 clips, pick a distinct code word for
 > each, and fill in `decode_key.json` with the label / old-new / code-word mapping. **Randomise
-> which position in each pair gets old vs new** — if old is always the first label in
+> which position in each pair gets old vs new** - if old is always the first label in
 > `config.js`, position alone gives it away. Don't commit the decode key.
 
 Needs ffmpeg (`brew install ffmpeg`, free).
@@ -186,8 +186,8 @@ direction, and reports it confidently.
 
 ## 6. Upload to YouTube · **YOU** · 15 minutes, the night before launch
 
-All ten into YouTube Studio **in one session**, every one **Unlisted**, blind titles only —
-`A-1`, `A-2`, `B-1` — no course name, date, or version anywhere.
+All ten into YouTube Studio **in one session**, every one **Unlisted**, blind titles only -
+`A-1`, `A-2`, `B-1` - no course name, date, or version anywhere.
 
 One session is what keeps it blind. Ten clips sharing a timestamp tell a rater nothing; five
 from today and five from last year tell them everything.
@@ -203,7 +203,7 @@ feedback about your content. Check each offers 720p before pointing CloudResearc
 
 Launch the 3-participant dry run. Check the Sheet has three rows with sensible watch
 percentages, real sentences in the comments, and sessions around 25 minutes. That's what the
-dry run is for — testing the cost model against reality before the $245.
+dry run is for - testing the cost model against reality before the $245.
 
 Then launch the main run at 7 raters per pair. CloudResearch only pays completions, so expect to
 launch slightly more than 35 to land 35; top up at the end rather than over-ordering.
@@ -242,7 +242,7 @@ edit existing rows and is not a key to your Google account.
 **Approve against the Sheet, not the completion code.** A fixed code is shareable by definition.
 A real submission is a row carrying that participant's ID that clears the quality gates.
 
-**Reject only on the objective gates** — didn't watch, wrong code word, impossible speed,
+**Reject only on the objective gates** - didn't watch, wrong code word, impossible speed,
 copy-pasted text. Never on someone's rating. CloudResearch participants talk, and unfair
 rejections make your next study fill slower.
 
