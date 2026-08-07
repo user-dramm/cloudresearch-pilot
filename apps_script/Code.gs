@@ -90,11 +90,11 @@ var HEADERS = [
      code word, then the playback telemetry. */
   "s1_overall","s1_audio","s1_visuals","s1_clarity","s1_audio_why","s1_codeword",
   "s1_watched_sec","s1_duration_sec","s1_watch_pct","s1_seek_fwd","s1_seek_back",
-  "s1_load_errors","s1_max_rate","s1_rate_ms","s1_video_count",
+  "s1_load_errors","s1_max_rate","s1_rate_ms","s1_video_count","s1_cw_blocked",
 
   "s2_overall","s2_audio","s2_visuals","s2_clarity","s2_audio_why","s2_codeword",
   "s2_watched_sec","s2_duration_sec","s2_watch_pct","s2_seek_fwd","s2_seek_back",
-  "s2_load_errors","s2_max_rate","s2_rate_ms","s2_video_count",
+  "s2_load_errors","s2_max_rate","s2_rate_ms","s2_video_count","s2_cw_blocked",
 
   /* The end block, in the order a rater answers it. */
   "h2h_choice","h2h_choice_slot","h2h_choice_key","h2h_magnitude","h2h_why",

@@ -8,7 +8,7 @@
 // that unpacks the overflow - but the Sheet is the view used to spot-check raters and
 // approve payment, and it showed blank columns and JSON where the answers should be.
 //
-//   cd ~/cloudresearch_pilot && python3 -m http.server 8794 &
+//   cd ~/cloudresearch_pilot && python3 -m http.server 8795 &
 //   PLAYWRIGHT_PATH=... node tools/test_headers.js
 //
 // NOTE ON APPLYING A HEADERS CHANGE: rows are written positionally as HEADERS.map(...),
@@ -18,7 +18,7 @@
 
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
 const fs = require('fs');
-const PORT = process.env.PORT || 8794;
+const PORT = process.env.PORT || 8795;
 
 (async () => {
   const gs = fs.readFileSync('apps_script/Code.gs', 'utf8');

@@ -99,6 +99,7 @@ def main():
             sides[info["version"]] = {
                 "slot": s, "key": k, "pct": pct, "dur": dur, "rate": rate,
                 "cw_ok": (not want) or got == want, "cw": got,
+                "cw_blocked": str(field(r, "s%d_cw_blocked" % s) or "").lower() == "yes",
                 "overall": field(r, "s%d_overall" % s),
                 "audio": field(r, "s%d_audio" % s),
                 "visuals": field(r, "s%d_visuals" % s),
@@ -183,7 +184,8 @@ def main():
             <span><b>{esc(s['clarity'] or '-')}</b> explained</span>
           </div>
           <div class="meta">watched {s['pct']:.0f}% &middot; {s['rate']:.2f}x &middot;
-            code word {'ok' if s['cw_ok'] else 'WRONG'}</div>
+            code word matched: <strong>{'yes' if s['cw_ok'] else 'NO'}</strong>
+            {'&middot; was blocked once for leaving it blank' if s['cw_blocked'] else ''}</div>
           {why}
         </div>"""
 

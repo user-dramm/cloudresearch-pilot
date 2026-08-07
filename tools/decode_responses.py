@@ -123,7 +123,10 @@ def main():
                             "   %s videos" % nvid if str(nvid) not in ("1", "?") else ""))
             lines.append("      watched %.0f%% of %.0fs   seeks fwd %s   max speed %.2fx"
                          % (pct, dur, r.get("s%s_seek_fwd" % s, "?"), rate))
-            lines.append("      code word: %s" % cw)
+            lines.append("      code word: %s   matched: %s%s"
+                         % (cw, "yes" if ((not want) or got == want) else "NO",
+                            "   (was blocked once for leaving it blank)"
+                            if str(field(r, "s%s_cw_blocked" % s)).lower() == "yes" else ""))
             lines.append("      overall %s  voice %s  on-screen %s  explained %s"
                          % (field(r, "s%s_overall" % s) or "-", field(r, "s%s_audio" % s) or "-",
                             field(r, "s%s_visuals" % s) or "-", field(r, "s%s_clarity" % s) or "-"))

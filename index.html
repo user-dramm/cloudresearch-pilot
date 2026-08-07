@@ -271,7 +271,7 @@
    Bump FORM_VERSION on every change that could affect the data, and tag the
    commit with the same string. That pairing is the audit trail.
    =========================================================================== */
-const FORM_VERSION = "1.11.0";
+const FORM_VERSION = "1.12.0";
 
 const CFG = window.STUDY_CONFIG;
 
@@ -863,13 +863,24 @@ function buildVersionScreen(slot){
     const cw = $("#cw" + slot);
     const cwErr = $("#err-cw" + slot);
     if (!CFG.demoBanner && !cw.value.trim()) {
-      cwErr.textContent = "Please enter the code word shown on screen.";
+      /* Say WHERE it was. "Shown on screen" was ambiguous enough that someone could
+         hunt this page for it rather than remember it came from the video, and then
+         give up on a task they had otherwise finished. */
+      cwErr.textContent = "Please type the code word that appeared in the video, part "
+        + "way through the second half. If you missed it, drag the video back to that "
+        + "point and watch it again, then skip forward to where you had got to.";
       cwErr.classList.add("show");
       cw.scrollIntoView({ behavior:"smooth", block:"center" });
+      /* Recorded because it is the one block an otherwise-finished rater can hit, so
+         its rate is worth knowing. If several people trip it, the five-second window is
+         too short and that is a fact about the instrument, not about them. */
+      watch[slot].cwBlocked = true;
+      D["s" + slot + "_cw_blocked"] = "yes";
       return;
     }
     cwErr.classList.remove("show");
     D["s" + slot + "_codeword"] = cw.value.trim();
+    if (!D["s" + slot + "_cw_blocked"]) D["s" + slot + "_cw_blocked"] = "no";
 
     const miss = validate(QS, "s" + slot + "_");
     if (miss) { e.textContent = miss; e.classList.add("show"); document.querySelector(`[data-qid="${miss_id}"]`)?.scrollIntoView({ behavior:"smooth", block:"center" }); return; }
